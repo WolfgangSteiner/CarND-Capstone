@@ -33,7 +33,7 @@ that we have created in the `__init__` function.
 
 class DBWNode(object):
     def __init__(self):
-        rospy.init_node('dbw_node')
+        rospy.init_node('dbw_node', log_level=rospy.DEBUG)
 
         self.target_linear_velocity = None
         self.target_angular_velocity = None
@@ -121,6 +121,12 @@ class DBWNode(object):
 
     def dbw_cb(self, msg):
         self.dbw_enabled = msg.data
+
+        if (self.dbw_enabled):
+            rospy.logdebug('DBW enabled.')
+        else:
+            rospy.logdebug('DBW disabled. Resetting Twist Controller.')
+            self.controller.reset()
 
 
 if __name__ == '__main__':
