@@ -28,8 +28,7 @@ class Controller(object):
         throttle = self.linear_velocity_pid.step(target_linear_velocity - current_linear_velocity, sample_time)
         steer = self.angluar_velocity_pid.step(target_angular_velocity, sample_time)
         current_linear_velocity, current_angular_velocity,
-        current_accel,
-        dbw_enabled, **kwargs):
+        current_accel, **kwargs):
 
         sample_time = 1.0 / self.sample_rate_in_hertz
 
@@ -58,3 +57,8 @@ class Controller(object):
             brake_cmd = 0.0
 
         return throttle, brake_cmd, steer
+
+
+    def reset(self):
+        self.linear_velocity_pid.reset()
+        self.angluar_velocity_pid.reset()
