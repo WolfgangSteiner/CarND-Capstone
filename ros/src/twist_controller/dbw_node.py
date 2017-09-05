@@ -85,7 +85,7 @@ class DBWNode(object):
                 self.current_angular_velocity,
                 self.dbw_enabled)
 
-            self.publish(throttle, brake, -steer)
+            self.publish(throttle, brake, steer)
 
             rate.sleep()
 
