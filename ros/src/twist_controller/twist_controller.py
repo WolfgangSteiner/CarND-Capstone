@@ -17,3 +17,7 @@ class Controller(object):
         steer = self.angluar_velocity_pid.step(target_angular_velocity - current_angular_velocity, sample_time)
 
         return throttle, 0.0, steer
+
+    def reset(self):
+        self.linear_velocity_pid.reset()
+        self.angluar_velocity_pid.reset()
