@@ -34,7 +34,7 @@ that we have created in the `__init__` function.
 
 class DBWNode(object):
     def __init__(self):
-        rospy.init_node('dbw_node')
+        rospy.init_node('dbw_node', log_level=rospy.INFO)
 
         self.target_linear_velocity = None
         self.target_angular_velocity = None
@@ -45,13 +45,6 @@ class DBWNode(object):
         self.accel_tau = 0.5
         self.sample_rate_in_hertz = 50.0 # 50Hz
 
-
-        vehicle_mass = rospy.get_param('~vehicle_mass', 1736.35)
-        fuel_capacity = rospy.get_param('~fuel_capacity', 13.5)
-        brake_deadband = rospy.get_param('~brake_deadband', .1)
-        decel_limit = rospy.get_param('~decel_limit', -5)
-        accel_limit = rospy.get_param('~accel_limit', 1.)
-        wheel_radius = rospy.get_param('~wheel_radius', 0.2413)
         wheel_base = rospy.get_param('~wheel_base', 2.8498)
         steer_ratio = rospy.get_param('~steer_ratio', 14.8)
         max_lat_accel = rospy.get_param('~max_lat_accel', 3.)
@@ -76,7 +69,7 @@ class DBWNode(object):
         # Subscribe to required topics:
         rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cb)
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
-        rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_cb)
+        rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
 
         self.loop()
 
@@ -84,8 +77,9 @@ class DBWNode(object):
     def loop(self):
         rate = rospy.Rate(self.sample_rate_in_hertz) # 50Hz
         while not rospy.is_shutdown():
-            if self.current_linear_velocity is None\
-            or self.target_linear_velocity is None:
+            if self.current_linear_velocity is None \
+            or self.target_linear_velocity is None \
+            or not self.dbw_enabled:
                 continue
 
             throttle, brake, steer = self.controller.control(
@@ -93,7 +87,7 @@ class DBWNode(object):
                 self.target_angular_velocity,
                 self.current_linear_velocity,
                 self.current_angular_velocity,
-                self.dbw_enabled)
+                self.current_acceleration)
 
             self.publish(throttle, brake, steer)
 
@@ -125,12 +119,23 @@ class DBWNode(object):
 
 
     def velocity_cb(self, msg):
+        if self.current_linear_velocity is not None:
+            raw_accel = self.sample_rate_in_hertz * (self.current_linear_velocity - msg.twist.linear.x)
+            self.lpf_accel.filt(raw_accel)
+            self.current_acceleration = self.lpf_accel.get()
+
         self.current_linear_velocity = msg.twist.linear.x
         self.current_angular_velocity = msg.twist.angular.z
 
 
-    def dbw_cb(self, msg):
+    def dbw_enabled_cb(self, msg):
         self.dbw_enabled = msg.data
+
+        if (self.dbw_enabled):
+            rospy.loginfo('DBW enabled.')
+        else:
+            rospy.loginfo('DBW disabled. Resetting Twist Controller.')
+            self.controller.reset()
 
 
 if __name__ == '__main__':
