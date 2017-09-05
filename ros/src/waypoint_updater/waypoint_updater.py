@@ -95,7 +95,7 @@ class WaypointUpdater(object):
         for idx,wp in enumerate(waypoints_msg.waypoints):
             dist = self.distance_to_waypoint(wp)
             if dist < min_dist:
-                min_dist
+                min_dist = dist
                 min_idx = idx
 
         # Ensure that the closest waypoint is in front of the car:
