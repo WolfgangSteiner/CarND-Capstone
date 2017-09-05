@@ -74,7 +74,7 @@ class WaypointUpdater(object):
         dx = wx - self.px
         dy = wy - self.py
         local_wx = math.cos(-self.yaw) * dx - math.sin(-self.yaw) * dy
-        local_wy = math.sin(-self.yaw) * dx - math.cos(-self.yaw) * dy
+        local_wy = math.sin(-self.yaw) * dx + math.cos(-self.yaw) * dy
         return local_wx, local_wy, math.atan2(local_wy, local_wx)
 
 
