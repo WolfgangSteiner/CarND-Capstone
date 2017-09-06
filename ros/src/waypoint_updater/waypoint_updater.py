@@ -129,7 +129,7 @@ class WaypointUpdater(object):
             current_idx = (current_idx + 1) % num_wp
 
 
-        # !!!!! Please this IF after starting to use brake!!!!!!!!
+        # !!!!! Please remove this IF after starting to use brake!!!!!!!!
         if self.TEST_BRAKE_CNT > 0:
             self.TEST_BRAKE_CNT -= 1
             if self.TEST_BRAKE_CNT == 0:

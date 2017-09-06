@@ -44,6 +44,7 @@ class DBWNode(object):
         self.target_angular_velocity = None
         self.current_linear_velocity = None
         self.current_angular_velocity = None
+        self.current_acceleration = None
         self.dbw_enabled = None
 
 
@@ -90,7 +91,7 @@ class DBWNode(object):
                 self.target_angular_velocity,
                 self.current_linear_velocity,
                 self.current_angular_velocity,
-                self.lpf_accel,
+                self.current_acceleration,
                 self.dbw_enabled)
 
             self.publish(throttle, brake, steer)
@@ -126,6 +127,7 @@ class DBWNode(object):
         if self.current_linear_velocity is not None:
             raw_accel = 50.0 * (self.current_linear_velocity - msg.twist.linear.x)
             self.lpf_accel.filt(raw_accel)
+            self.current_acceleration = self.lpf_accel.get()
 
         self.current_linear_velocity = msg.twist.linear.x
         self.current_angular_velocity = msg.twist.angular.z

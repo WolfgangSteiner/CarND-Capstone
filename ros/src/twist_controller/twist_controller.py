@@ -20,7 +20,7 @@ class Controller1(object):
     def control(self,
         target_linear_velocity, target_angular_velocity,
         current_linear_velocity, current_angular_velocity,
-        lpf_accel,
+        current_accel,
         dbw_enabled, **kwargs):
         sample_time = 1 / 50.0
 
@@ -52,7 +52,7 @@ class Controller(object):
     def control(self,
         target_linear_velocity, target_angular_velocity,
         current_linear_velocity, current_angular_velocity,
-        lpf_accel,
+        current_accel,
         dbw_enabled, **kwargs):
         sample_time = 1 / 50.0
 
@@ -75,7 +75,7 @@ class Controller(object):
             target_linear_velocity = MIN_SPEED # comment this line to remove MIN_SPEED
 
         if (accel_cmd >= 0.0):
-            throttle = self.accel_pid.step(accel_cmd - lpf_accel.get(), sample_time)
+            throttle = self.accel_pid.step(accel_cmd - current_accel, sample_time)
         else:
             self.accel_pid.reset()
             throttle = 0.0
