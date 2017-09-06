@@ -40,7 +40,10 @@ class WaypointUpdater(object):
         self.py = None
         self.yaw = None
         self.current_waypoint_idx = None
-        self.target_velocity = 10.0
+        self.target_velocity = 20#10.0
+
+        # !!!!! Please remove TEST_BRAKE_CNT after starting to use brake!!!!!!!!
+        self.TEST_BRAKE_CNT = 0#100
 
         rospy.spin()
 
@@ -124,6 +127,13 @@ class WaypointUpdater(object):
             new_wp.twist.twist.linear.x = self.target_velocity
             lane.waypoints.append(new_wp)
             current_idx = (current_idx + 1) % num_wp
+
+
+        # !!!!! Please this IF after starting to use brake!!!!!!!!
+        if self.TEST_BRAKE_CNT > 0:
+            self.TEST_BRAKE_CNT -= 1
+            if self.TEST_BRAKE_CNT == 0:
+                self.target_velocity = 0
 
         self.final_waypoints_pub.publish(lane)
 

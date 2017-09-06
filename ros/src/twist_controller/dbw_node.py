@@ -7,6 +7,7 @@ from geometry_msgs.msg import TwistStamped
 import math
 
 from twist_controller import Controller
+from lowpass import LowPassFilter
 
 '''
 You can build this node only after you have built (or partially built) the `waypoint_updater` node.
@@ -31,6 +32,10 @@ that we have created in the `__init__` function.
 
 '''
 
+
+CFG_ACCEL_TAU = 0.5 # LPF time constant (s)
+
+
 class DBWNode(object):
     def __init__(self):
         rospy.init_node('dbw_node')
@@ -42,12 +47,12 @@ class DBWNode(object):
         self.dbw_enabled = None
 
 
-        vehicle_mass = rospy.get_param('~vehicle_mass', 1736.35)
-        fuel_capacity = rospy.get_param('~fuel_capacity', 13.5)
-        brake_deadband = rospy.get_param('~brake_deadband', .1)
+        #vehicle_mass = rospy.get_param('~vehicle_mass', 1736.35)
+        #fuel_capacity = rospy.get_param('~fuel_capacity', 13.5)
+        #brake_deadband = rospy.get_param('~brake_deadband', .1)
         decel_limit = rospy.get_param('~decel_limit', -5)
         accel_limit = rospy.get_param('~accel_limit', 1.)
-        wheel_radius = rospy.get_param('~wheel_radius', 0.2413)
+        #wheel_radius = rospy.get_param('~wheel_radius', 0.2413)
         wheel_base = rospy.get_param('~wheel_base', 2.8498)
         steer_ratio = rospy.get_param('~steer_ratio', 14.8)
         max_lat_accel = rospy.get_param('~max_lat_accel', 3.)
@@ -68,6 +73,8 @@ class DBWNode(object):
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_cb)
 
+        self.lpf_accel = LowPassFilter(CFG_ACCEL_TAU, 0.02)
+
         self.loop()
 
 
@@ -83,6 +90,7 @@ class DBWNode(object):
                 self.target_angular_velocity,
                 self.current_linear_velocity,
                 self.current_angular_velocity,
+                self.lpf_accel,
                 self.dbw_enabled)
 
             self.publish(throttle, brake, steer)
@@ -115,6 +123,10 @@ class DBWNode(object):
 
 
     def velocity_cb(self, msg):
+        if self.current_linear_velocity is not None:
+            raw_accel = 50.0 * (self.current_linear_velocity - msg.twist.linear.x)
+            self.lpf_accel.filt(raw_accel)
+
         self.current_linear_velocity = msg.twist.linear.x
         self.current_angular_velocity = msg.twist.angular.z
 
