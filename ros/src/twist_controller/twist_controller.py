@@ -1,47 +1,27 @@
-import rospy
 from pid import PID
 from math import fabs
 
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
 
-# Minimal driving speed in mph.
-MIN_SPEED_MPH = 5
+# Minimal driving speed in m/s.
+MIN_SPEED_MPS = 2 # or 4.47 mph = 7.2 km/h
 
-def mphToMps(mph):
-    return mph * ONE_MPH
-
-# Original Controller
-class Controller1(object):
-    def __init__(self, *args, **kwargs):
-        self.linear_velocity_pid = PID(1.0, 0.1, 0.5, mn=0.0, mx=1.0)
-        self.angluar_velocity_pid = PID(10.0, 0.1, 0.5, mn=-0.43, mx=0.43)
-
-    def control(self,
-        target_linear_velocity, target_angular_velocity,
-        current_linear_velocity, current_angular_velocity,
-        current_accel,
-        dbw_enabled, **kwargs):
-        sample_time = 1 / 50.0
-
-        vel_error = target_linear_velocity - current_linear_velocity
-
-        throttle = self.linear_velocity_pid.step(vel_error, sample_time)
-        steer = self.angluar_velocity_pid.step(target_angular_velocity, sample_time)
-
-        return throttle, 0.0, steer
-
-# New version with brake
 class Controller(object):
-    def __init__(self, *args, **kwargs):
+    def __init__(self,
+        sample_rate_in_hertz,
+        vehicle_mass,
+        fuel_capacity,
+        brake_deadband,
+        wheel_radius,
+        decel_limit,
+        accel_limit, **kwargs):
 
-        decel_limit = rospy.get_param('~decel_limit', -5)
-        accel_limit = rospy.get_param('~accel_limit', 1.)
-        
-        self.cfg_brake_deadband = rospy.get_param('~brake_deadband', .1)
-        self.cfg_wheel_radius = rospy.get_param('~wheel_radius', 0.2413)
-        self.cfg_vehicle_mass = rospy.get_param('~vehicle_mass', 1736.35)
-        self.cfg_fuel_capacity = rospy.get_param('~fuel_capacity', 13.5)
+        self.sample_rate_in_hertz = sample_rate_in_hertz
+        self.cfg_brake_deadband = brake_deadband
+        self.cfg_wheel_radius = wheel_radius
+        self.cfg_vehicle_mass = vehicle_mass
+        self.cfg_fuel_capacity = fuel_capacity
 
 #        self.linear_velocity_pid = PID(2.0, 0.0, 0.0, mn=-fabs(decel_limit), mx=accel_limit)
         self.linear_velocity_pid = PID(1.0, 0.1, 0.5, mn=-fabs(decel_limit), mx=accel_limit)
@@ -54,7 +34,8 @@ class Controller(object):
         current_linear_velocity, current_angular_velocity,
         current_accel,
         dbw_enabled, **kwargs):
-        sample_time = 1 / 50.0
+        
+        sample_time = 1.0 / self.sample_rate_in_hertz
 
         # we don't know fuel level, so we use 100% of fuel_capacity.
         vehicle_mass = self.cfg_vehicle_mass + self.cfg_fuel_capacity * GAS_DENSITY
@@ -67,7 +48,7 @@ class Controller(object):
         throttle = None
         brake_cmd = None
 
-        MIN_SPEED = mphToMps(MIN_SPEED_MPH)
+        MIN_SPEED = MIN_SPEED_MPS
         if (target_linear_velocity <= 1e-2):
             accel_cmd = min(accel_cmd, -530.0 / vehicle_mass / self.cfg_wheel_radius)
         elif (target_linear_velocity < MIN_SPEED):

@@ -47,17 +47,21 @@ class DBWNode(object):
         self.current_acceleration = None
         self.dbw_enabled = None
 
+        self.sample_rate_in_hertz = 50.0 # 50Hz
 
-        #vehicle_mass = rospy.get_param('~vehicle_mass', 1736.35)
-        #fuel_capacity = rospy.get_param('~fuel_capacity', 13.5)
-        #brake_deadband = rospy.get_param('~brake_deadband', .1)
+        vehicle_mass = rospy.get_param('~vehicle_mass', 1736.35)
+        fuel_capacity = rospy.get_param('~fuel_capacity', 13.5)
+        brake_deadband = rospy.get_param('~brake_deadband', .1)
         decel_limit = rospy.get_param('~decel_limit', -5)
         accel_limit = rospy.get_param('~accel_limit', 1.)
-        #wheel_radius = rospy.get_param('~wheel_radius', 0.2413)
+        wheel_radius = rospy.get_param('~wheel_radius', 0.2413)
         wheel_base = rospy.get_param('~wheel_base', 2.8498)
         steer_ratio = rospy.get_param('~steer_ratio', 14.8)
         max_lat_accel = rospy.get_param('~max_lat_accel', 3.)
         max_steer_angle = rospy.get_param('~max_steer_angle', 8.)
+        decel_limit = rospy.get_param('~decel_limit', -5)
+        accel_limit = rospy.get_param('~accel_limit', 1.)
+        
 
         self.steer_pub = rospy.Publisher('/vehicle/steering_cmd',
                                          SteeringCmd, queue_size=1)
@@ -67,7 +71,14 @@ class DBWNode(object):
                                          BrakeCmd, queue_size=1)
 
         # TODO: Create `TwistController` object
-        self.controller = Controller()
+        self.controller = Controller(
+            self.sample_rate_in_hertz,
+            vehicle_mass,
+            fuel_capacity,
+            brake_deadband,
+            wheel_radius,
+            decel_limit,
+            accel_limit)
 
         # TODO: Subscribe to all the topics you need to
         rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cb)
@@ -80,7 +91,7 @@ class DBWNode(object):
 
 
     def loop(self):
-        rate = rospy.Rate(50) # 50Hz
+        rate = rospy.Rate(self.sample_rate_in_hertz) # 50Hz
         while not rospy.is_shutdown():
             if self.current_linear_velocity is None\
             or self.target_linear_velocity is None:
@@ -125,7 +136,7 @@ class DBWNode(object):
 
     def velocity_cb(self, msg):
         if self.current_linear_velocity is not None:
-            raw_accel = 50.0 * (self.current_linear_velocity - msg.twist.linear.x)
+            raw_accel = self.sample_rate_in_hertz * (self.current_linear_velocity - msg.twist.linear.x)
             self.lpf_accel.filt(raw_accel)
             self.current_acceleration = self.lpf_accel.get()
 
