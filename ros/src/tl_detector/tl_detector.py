@@ -10,6 +10,7 @@ from light_classification.tl_classifier import TLClassifier
 import tf
 import cv2
 import yaml
+import tfrunner
 
 STATE_COUNT_THRESHOLD = 3
 
@@ -157,11 +158,13 @@ class TLDetector(object):
         self.camera_image.encoding = "rgb8"
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
-        x, y = self.project_to_image_plane(light.pose.pose.position)
+        #x, y = self.project_to_image_plane(light.pose.pose.position)
 
         #TODO use light location to zoom in on traffic light in image
 
         #Get classification
+
+        tfrunner.run(cv_image)
         return self.light_classifier.get_classification(cv_image)
 
     def process_traffic_lights(self):
@@ -180,8 +183,11 @@ class TLDetector(object):
 
         #TODO find the closest visible traffic light (if one exists)
 
+        light = True
+
         if light:
             state = self.get_light_state(light)
+            return -1, TrafficLight.UNKNOWN
             return light_wp, state
         self.waypoints = None
         return -1, TrafficLight.UNKNOWN
