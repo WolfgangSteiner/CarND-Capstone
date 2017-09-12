@@ -55,11 +55,13 @@ def trafficlights(sid, data):
 
 @sio.on('image')
 def image(sid, data):
+    
     bridge.publish_camera(data)
 
 if __name__ == '__main__':
 
     # wrap Flask application with engineio's middleware
+
     app = socketio.Middleware(sio, app)
 
     # deploy as an eventlet WSGI server
