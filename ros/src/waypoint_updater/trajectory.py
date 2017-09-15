@@ -3,8 +3,8 @@ from numpy.polynomial import Polynomial
 
 class Trajectory:
     def __init__(self, start_state, end_state, duration, delay=0.0, total_duration=10.0, sample_rate=100.0):
-        self.start_state = start_state
-        self.end_state = end_state
+        self.start_state = np.array(start_state)
+        self.end_state = np.array(end_state)
         self.duration = duration
         self.delay = delay
         self.total_duration = total_duration
@@ -51,7 +51,7 @@ class Trajectory:
             return self.polynomial.deriv(2)(t - self.delay)
 
         else:
-            return self.end_state[1]
+            return self.end_state[2]
 
 
     def jerk_at_time(self, t):
@@ -59,8 +59,7 @@ class Trajectory:
             return 0.0
 
         else:
-            td = self.delay
-            return self.polynomial.deriv(3)(t - td)
+            return self.polynomial.deriv(3)(t - self.delay)
 
 
     def state_at_time(self, t):
@@ -120,20 +119,23 @@ class Trajectory:
 
 
     def cost(self):
+        acceleration_cost = 0.0
+        jerk_cost = 0.0
         for t in np.arange(0.0, self.total_duration, 0.1):
             v = self.velocity_at_time(t)
             if v < 0.0:
                 return float('inf')
 
             a = self.acceleration_at_time(t)
-            if abs(a) >= 9.0:
-                return float('inf')
-
             j = self.jerk_at_time(t)
-            if abs(j) >= 9.0:
+
+            if abs(a) >= 9.0 or abs(j) >= 9.0:
                 return float('inf')
 
-        return 1.0
+            acceleration_cost += a * a
+            jerk_cost += j * j
+
+        return acceleration_cost + jerk_cost
 
 
     @staticmethod
@@ -188,7 +190,7 @@ if __name__ == "__main__":
     ax2 = fig.add_subplot(4,1,2)
     ax2.set_title("velocity")
     ax3 = fig.add_subplot(4,1,3)
-    ax3.set_yscale('linear')    
+    ax3.set_yscale('linear')
     ax3.set_title("accleration")
     ax4 = fig.add_subplot(4,1,4)
     ax4.set_title("jerk")
@@ -197,12 +199,12 @@ if __name__ == "__main__":
         t = np.arange(0, total_duration, 0.1)
         s = np.vectorize(tr.position_at_time)
         v = np.vectorize(tr.velocity_at_time)
-        a = np.vectorize(tr.acceleration_at_time)
+        acc = np.vectorize(tr.acceleration_at_time)
         j = np.vectorize(tr.jerk_at_time)
 
         ax1.plot(t, s(t))
         ax2.plot(t, v(t))
-        ax3.plot(t, a(t))
+        ax3.plot(t, acc(t))
         ax4.plot(t, j(t))
 
     plt.show()

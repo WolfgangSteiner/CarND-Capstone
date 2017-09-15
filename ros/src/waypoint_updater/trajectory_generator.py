@@ -1,0 +1,71 @@
+from trajectory import Trajectory
+import numpy as np
+
+class TrajectoryGenerator(object):
+    def __init__(self, start_state, end_state):
+        self.start_state = start_state
+        self.end_state = end_state
+        self.planning_horizon = 10.0
+        self.acceeration_weight = 1.0
+        self.jerk_weight = 1.0
+        self.trajectories = []
+        self.time_step = 0.5
+
+        for duration in np.arange(1.0, self.planning_horizon + 0.1, self.time_step):
+            for delay in np.arange(0.0, self.planning_horizon - duration + 0.1, self.time_step):
+                tr = Trajectory(self.start_state, self.end_state, duration, delay)
+                if tr.cost() < float('inf'):
+                    self.trajectories.append(tr)
+
+
+    def minimum_cost_trajectory(self):
+        min_cost = float('inf')
+        min_cost_trajectory = None
+
+        for tr in self.trajectories:
+            c = tr.cost()
+            if c < min_cost:
+                min_cost = c
+                min_cost_trajectory = tr
+
+        return min_cost_trajectory
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    v0 = 20.0
+    delta_s = 100.0
+    s0 = [0, v0, 0]
+    s1 = [delta_s, 0, 0]
+    gen = TrajectoryGenerator(s0, s1)
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot(4,1,1)
+    ax1.set_title("position")
+    ax2 = fig.add_subplot(4,1,2)
+    ax2.set_title("velocity")
+    ax3 = fig.add_subplot(4,1,3)
+    ax3.set_yscale('linear')
+    ax3.set_title("accleration")
+    ax4 = fig.add_subplot(4,1,4)
+    ax4.set_title("jerk")
+
+    best_trajectory = gen.minimum_cost_trajectory()
+    t = np.arange(0, gen.planning_horizon, 0.1)
+
+    def plot_trajectory(tr, color):
+        s = np.vectorize(tr.position_at_time)
+        v = np.vectorize(tr.velocity_at_time)
+        a = np.vectorize(tr.acceleration_at_time)
+        j = np.vectorize(tr.jerk_at_time)
+        ax1.plot(t, s(t), color=color)
+        ax2.plot(t, v(t), color=color)
+        ax3.plot(t, a(t), color=color)
+        ax4.plot(t, j(t), color=color)
+
+
+    for tr in gen.trajectories:
+        plot_trajectory(tr, '#888888')
+    plot_trajectory(best_trajectory, '#00ff00')
+    plt.show()
