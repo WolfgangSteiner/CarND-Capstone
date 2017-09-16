@@ -67,7 +67,7 @@ class Trajectory:
         return [self.position_at_time(t), self.velocity_at_time(t), self.acceleration_at_time(t)]
 
 
-    def time_for_position(self, x):
+    def time_for_position(self, x, initial_t = None, gamma=0.001, precision=1e-3, max_iterations=1000):
         s1,v1,a1 = self.end_state
         if x > s1 and v1 == 0.0 and a1 == 0.0:
             return float('inf')
@@ -77,7 +77,7 @@ class Trajectory:
             return -2.0 * (x - self.position_at_time(t)) * self.velocity_at_time(t)
 
         # Initial guess for gradient descent:
-        def initial_t(x):
+        def calc_initial_t(x):
             t = 0.0
             min_error = 1e9
             min_t = 0.0
@@ -91,19 +91,16 @@ class Trajectory:
                 t += self.total_duration / 100
             return min_t
 
-        MAX_ITER = 1000
+        current_t = calc_initial_t(x) if initial_t is None else initial_t
+        previous_step_size = float('inf')
         i = 0
-        current_t = initial_t(x)
-        gamma = 0.01 # step size multiplier
-        precision = 0.00001
-        previous_step_size = 0.5 * self.total_duration
 
         # Perform gradient descent:
         while previous_step_size > precision:
             previous_t = current_t
             current_t += -gamma * df(previous_t)
             previous_step_size = abs(current_t - previous_t)
-            if i >= MAX_ITER:
+            if i >= max_iterations:
                 break
             i += 1
 
@@ -196,7 +193,9 @@ if __name__ == "__main__":
         ax3.plot(t, acc(t))
         ax4.plot(t, j(t))
 
+
     plt.show()
+
 
     # print tr.coeffs
     # print
