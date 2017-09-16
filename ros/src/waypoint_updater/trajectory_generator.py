@@ -41,15 +41,20 @@ if __name__ == "__main__":
     gen = TrajectoryGenerator(s0, s1)
 
     fig = plt.figure()
-    ax1 = fig.add_subplot(4,1,1)
+    num_figs = 6
+    ax1 = fig.add_subplot(num_figs,1,1)
     ax1.set_title("position")
-    ax2 = fig.add_subplot(4,1,2)
+    ax2 = fig.add_subplot(num_figs,1,2)
     ax2.set_title("velocity")
-    ax3 = fig.add_subplot(4,1,3)
+    ax3 = fig.add_subplot(num_figs,1,3)
     ax3.set_yscale('linear')
     ax3.set_title("accleration")
-    ax4 = fig.add_subplot(4,1,4)
+    ax4 = fig.add_subplot(num_figs,1,4)
     ax4.set_title("jerk")
+    ax5 = fig.add_subplot(num_figs,1,5)
+    ax5.set_title("time at position")
+    ax6 = fig.add_subplot(num_figs,1,6)
+    ax6.set_title("velocity at position")
 
     best_trajectory = gen.minimum_cost_trajectory()
     t = np.arange(0, gen.planning_horizon, 0.1)
@@ -68,4 +73,13 @@ if __name__ == "__main__":
     for tr in gen.trajectories:
         plot_trajectory(tr, '#888888')
     plot_trajectory(best_trajectory, '#00ff00')
+
+    ws = np.arange(0,delta_s,0.5)
+    t_at_ws = np.vectorize(best_trajectory.time_for_position)(ws)
+    v_at_ws = np.vectorize(best_trajectory.velocity_at_position)(ws)
+    ax5.plot(ws, t_at_ws)
+    ax6.plot(ws, v_at_ws)
+
+
+
     plt.show()
