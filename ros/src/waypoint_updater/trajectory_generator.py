@@ -35,7 +35,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     v0 = 20.0
-    delta_s = 100.0
+    delta_s = 50.0
     s0 = [0, v0, 0]
     s1 = [delta_s, 0, 0]
     gen = TrajectoryGenerator(s0, s1)
