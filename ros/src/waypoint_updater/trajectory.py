@@ -9,6 +9,8 @@ class Trajectory:
         self.delay = delay
         self.total_duration = total_duration
         self.sample_rate = sample_rate
+        self.max_jerk = 10.0
+        self.max_acceleration = 10.0
 
         self.polynomial = Trajectory.calc_polynomial(
             self.state_at_time(self.delay),
@@ -121,6 +123,14 @@ class Trajectory:
         v = np.vectorize(self.velocity_at_time)(t)
         a = np.vectorize(self.acceleration_at_time)(t)
         j = np.vectorize(self.jerk_at_time)(t)
+
+        if np.any(v < 0.0)   \
+          or np.any(a >= self.max_acceleration) \
+          or np.any(a <= -2.0 * self.max_acceleration) \
+          or np.any(j >= self.max_jerk) \
+          or np.any(j <= -2.0 * self.max_jerk):
+            return float('inf')
+
         return np.sum(a * a + j * j)
 
 
