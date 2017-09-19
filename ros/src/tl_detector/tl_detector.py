@@ -189,6 +189,11 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
+
+        if self.waypoints is None:
+            return -1, TrafficLight.UNKNOWN
+
+
         light = None
 
         # List of positions that correspond to the line to stop in front of for a given intersection
