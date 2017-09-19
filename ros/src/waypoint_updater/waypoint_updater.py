@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped,TwistStamped
 from styx_msgs.msg import Lane, Waypoint
 
 import math
@@ -29,6 +29,7 @@ class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         rospy.Subscriber('/traffic_waypoint', Waypoint, self.traffic_cb)
         rospy.Subscriber('/obstacle_waypoint', Waypoint, self.obstacle_cb)
@@ -39,6 +40,7 @@ class WaypointUpdater(object):
         self.px = None
         self.py = None
         self.yaw = None
+        self.velocity = None
         self.current_waypoint_idx = None
         self.target_velocity = 10.0
 
@@ -55,6 +57,10 @@ class WaypointUpdater(object):
         q = [orientation.x, orientation.y, orientation.z, orientation.w]
         _,_,self.yaw = tf.transformations.euler_from_quaternion(q)
         rospy.logdebug("px = %.2f, py = %.2f, yaw = %.2f", self.px, self.py, self.yaw)
+
+
+    def velocity_cb(self, msg):
+        self.velocity = msg.twist.linear.x
 
 
     def distance_to_waypoint(self, wp):
