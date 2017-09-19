@@ -23,6 +23,10 @@ class Controller(object):
 
     def control(self,
         target_linear_velocity, target_angular_velocity,
+        current_linear_velocity, current_angular_velocity):
+        sample_time = 1 / 50.0
+        throttle = self.linear_velocity_pid.step(target_linear_velocity - current_linear_velocity, sample_time)
+        steer = self.angluar_velocity_pid.step(target_angular_velocity, sample_time)
         current_linear_velocity, current_angular_velocity,
         current_accel, **kwargs):
 

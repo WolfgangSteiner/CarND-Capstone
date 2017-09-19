@@ -10,6 +10,8 @@ from light_classification.tl_classifier import TLClassifier
 import tf
 import cv2
 import yaml
+import tfrunner
+import numpy as np
 
 STATE_COUNT_THRESHOLD = 3
 
@@ -52,6 +54,7 @@ class TLDetector(object):
         rospy.spin()
 
     def pose_cb(self, msg):
+        # print("Running current pose")
         self.pose = msg
 
     def waypoints_cb(self, waypoints):
@@ -70,7 +73,9 @@ class TLDetector(object):
         """
         self.has_image = True
         self.camera_image = msg
+        # print("Running image cb")
         light_wp, state = self.process_traffic_lights()
+        #print(light_wp, state)
 
         '''
         Publish upcoming red lights at camera frequency.
@@ -85,6 +90,7 @@ class TLDetector(object):
             self.last_state = self.state
             light_wp = light_wp if state == TrafficLight.RED else -1
             self.last_wp = light_wp
+            print("publishing %d"% light_wp)
             self.upcoming_red_light_pub.publish(Int32(light_wp))
         else:
             self.upcoming_red_light_pub.publish(Int32(self.last_wp))
@@ -157,12 +163,23 @@ class TLDetector(object):
         self.camera_image.encoding = "rgb8"
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
-        x, y = self.project_to_image_plane(light.pose.pose.position)
+        loc = tfrunner.run(cv_image)
+        threshold = 0.99
+        r = np.sum(loc[0,0,:,:,1]>threshold)
+        g = np.sum(loc[0,0,:,:,2]>threshold)
+        y = np.sum(loc[0,0,:,:,3]>threshold)
 
-        #TODO use light location to zoom in on traffic light in image
+        if(r+g+y)>10:
+            if(r>=g and r>=y):
+                return TrafficLight.RED
+            elif(g>y):
+                return TrafficLight.GREEN
+            else:
+                return TrafficLight.YELLOW
+        else:
+            return TrafficLight.UNKNOWN
 
-        #Get classification
-        return self.light_classifier.get_classification(cv_image)
+        #return self.light_classifier.get_classification(cv_image)
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
@@ -178,12 +195,56 @@ class TLDetector(object):
         if(self.pose):
             car_position = self.get_closest_waypoint(self.pose.pose)
 
+        orientation = self.pose.pose.orientation
+        q = [orientation.x, orientation.y, orientation.z, orientation.w]
+        _,_,phi = tf.transformations.euler_from_quaternion(q)
+
+        x0 = self.pose.pose.position.x
+        y0 = self.pose.pose.position.y
+
+
+        s = np.sin(phi)
+        c = np.cos(phi)
+        rot = np.array([[c,s],[-s,c]])
+        local = [rot.dot(np.array([x-x0, y-y0])) for x,y in light_positions]
+
+        ## search closest avoinding backside lights
+        m = 9e99
+        mi = None
+        for i,c in enumerate(local):
+            if(c[0]>-15): # 0 is the stopping line but you can see it a bit later
+                d = c[0]**2 + c[1]**2
+                if(d<m):
+                    m=d
+                    mi = i
+        #print("Looking at tl %d"% mi)
+
+
         #TODO find the closest visible traffic light (if one exists)
+
+        light = light_positions[mi]
+
+
+        min_dist = 1e9
+        min_idx = None
+
+        for idx,wp in enumerate(self.waypoints.waypoints):
+            
+            wx, wy = wp.pose.pose.position.x, wp.pose.pose.position.y
+            dx = wx - light[0]
+            dy = wy - light[1]
+            dist =  np.sqrt(dx*dx + dy*dy)
+            if dist < min_dist:
+                min_dist = dist
+                min_idx = idx
+        #print(min_idx)
 
         if light:
             state = self.get_light_state(light)
-            return light_wp, state
-        self.waypoints = None
+            #print("state is %d"%state)
+            
+            return min_idx, state
+        
         return -1, TrafficLight.UNKNOWN
 
 if __name__ == '__main__':
