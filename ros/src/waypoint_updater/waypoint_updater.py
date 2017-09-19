@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
+from std_msgs.msg import Int32
 from geometry_msgs.msg import PoseStamped,TwistStamped
 from styx_msgs.msg import Lane, Waypoint
 
@@ -33,7 +34,7 @@ class WaypointUpdater(object):
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-        rospy.Subscriber('/traffic_waypoint', Waypoint, self.traffic_cb)
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
         rospy.Subscriber('/obstacle_waypoint', Waypoint, self.obstacle_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
@@ -46,6 +47,7 @@ class WaypointUpdater(object):
         self.current_waypoint_idx = None
         self.target_velocity = 10.0
         self.state = STATE_KEEP_VELOCITY
+        self.red_tl_waypoint_idx = -1
 
         rospy.spin()
 
@@ -118,7 +120,7 @@ class WaypointUpdater(object):
 
 
     def calc_waypoint_velocity(self, idx):
-        if self.state == STATE_KEEP_VELOCITY:
+        if self.red_tl_waypoint_idx == -1
             return self.target_velocity
         else:
             return 0.0
@@ -145,7 +147,7 @@ class WaypointUpdater(object):
 
 
     def traffic_cb(self, msg):
-        pass
+        self.red_tl_waypoint_idx = msg.data
 
 
     def obstacle_cb(self, msg):
