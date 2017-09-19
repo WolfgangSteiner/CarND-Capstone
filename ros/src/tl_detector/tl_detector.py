@@ -234,7 +234,6 @@ class TLDetector(object):
         min_idx = None
 
         for idx,wp in enumerate(self.waypoints.waypoints):
-            
             wx, wy = wp.pose.pose.position.x, wp.pose.pose.position.y
             dx = wx - light[0]
             dy = wy - light[1]
@@ -247,9 +246,9 @@ class TLDetector(object):
         if light:
             state = self.get_light_state(light)
             #print("state is %d"%state)
-            
+
             return min_idx, state
-        
+
         return -1, TrafficLight.UNKNOWN
 
 if __name__ == '__main__':
