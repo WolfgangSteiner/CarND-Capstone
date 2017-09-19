@@ -49,17 +49,10 @@ def run(testdata):
     threshold = 0.99
         
     img = np.array(img)
-    print("Nothing:",np.sum(img[0,0,:,:,0]>threshold))
-    print("Red:",np.sum(img[0,0,:,:,1]>threshold))
-    print("Green:",np.sum(img[0,0,:,:,2]>threshold))
-    print("Yellow:",np.sum(img[0,0,:,:,3]>threshold))
-        
-        
-
-        
-        
-
-
+    #print("Nothing:",np.sum(img[0,0,:,:,0]>threshold))
+    #print("Red:",np.sum(img[0,0,:,:,1]>threshold))
+    #print("Green:",np.sum(img[0,0,:,:,2]>threshold))
+    #print("Yellow:",np.sum(img[0,0,:,:,3]>threshold))
                 
     augment(testdata,img[0,0,:,:,1]>threshold,(255,0,0), img)
     augment(testdata,img[0,0,:,:,2]>threshold,(0,255,0), img)
@@ -68,6 +61,8 @@ def run(testdata):
     testdata = cv2.cvtColor(testdata, cv2.COLOR_BGR2RGB)
     cv2.imshow('image',testdata)
     cv2.waitKey(1)
+
+    return img
 
 
 #testdata = (cv2.cvtColor(cv2.imread("../../testimages/00200.jpg"), cv2.COLOR_BGR2RGB))
