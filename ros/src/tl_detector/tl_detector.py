@@ -190,6 +190,11 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
+
+        if self.waypoints is None:
+            return -1, TrafficLight.UNKNOWN
+
+
         light = None
         light_positions = self.config['light_positions']
         if(self.pose):
