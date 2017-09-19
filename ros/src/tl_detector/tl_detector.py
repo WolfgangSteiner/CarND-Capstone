@@ -53,6 +53,7 @@ class TLDetector(object):
         rospy.spin()
 
     def pose_cb(self, msg):
+        # print("Running current pose")
         self.pose = msg
 
     def waypoints_cb(self, waypoints):
@@ -71,6 +72,7 @@ class TLDetector(object):
         """
         self.has_image = True
         self.camera_image = msg
+        # print("Running image cb")
         light_wp, state = self.process_traffic_lights()
 
         '''
