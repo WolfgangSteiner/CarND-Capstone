@@ -23,7 +23,9 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
-
+STATE_KEEP_VELOCITY = 0
+STATE_SLOWING_DOWN = 1
+STATE_WAIT_AT_TL = 2
 
 class WaypointUpdater(object):
     def __init__(self):
@@ -43,6 +45,7 @@ class WaypointUpdater(object):
         self.velocity = None
         self.current_waypoint_idx = None
         self.target_velocity = 10.0
+        self.state = STATE_KEEP_VELOCITY
 
         rospy.spin()
 
@@ -114,6 +117,13 @@ class WaypointUpdater(object):
         return closest_idx
 
 
+    def calc_waypoint_velocity(self, idx):
+        if self.state == STATE_KEEP_VELOCITY:
+            return self.target_velocity
+        else:
+            return 0.0
+
+
     def waypoints_cb(self, waypoints_msg):
         if self.px is None:
             return
@@ -127,7 +137,7 @@ class WaypointUpdater(object):
             wp = waypoints_msg.waypoints[current_idx]
             new_wp = Waypoint()
             new_wp.pose = wp.pose
-            new_wp.twist.twist.linear.x = self.target_velocity
+            new_wp.twist.twist.linear.x = self.calc_waypoint_velocity(i)
             lane.waypoints.append(new_wp)
             current_idx = (current_idx + 1) % num_wp
 
