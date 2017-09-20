@@ -145,11 +145,8 @@ class TLDetector(object):
 
         return (x, y)
 
-    def get_light_state(self, light):
-        """Determines the current color of the traffic light
-
-        Args:
-            light (TrafficLight): light to classify
+    def get_light_state(self):
+        """Determines the current color of the closeset traffic light
 
         Returns:
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
@@ -157,7 +154,7 @@ class TLDetector(object):
         """
         if(not self.has_image):
             self.prev_light_loc = None
-            return False
+            return TrafficLight.UNKNOWN
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
@@ -193,7 +190,7 @@ class TLDetector(object):
             return -1, TrafficLight.UNKNOWN
 
 
-        light = None
+        stop_line_position = None
 
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
@@ -211,7 +208,7 @@ class TLDetector(object):
         s = np.sin(phi)
         c = np.cos(phi)
         rot = np.array([[c,s],[-s,c]])
-        local = [rot.dot(np.array([x-x0, y-y0])) for x,y in light_positions]
+        local = [rot.dot(np.array([x-x0, y-y0])) for x,y in stop_line_positions]
 
         ## search closest avoinding backside lights
         m = 9e99
@@ -220,36 +217,30 @@ class TLDetector(object):
             if(c[0]>-15): # 0 is the stopping line but you can see it a bit later
                 d = c[0]**2 + c[1]**2
                 if(d<m):
-                    m=d
+                    m = d
                     mi = i
         #print("Looking at tl %d"% mi)
 
-
         #TODO find the closest visible traffic light (if one exists)
+        if mi is not None:
+            stop_line_position = stop_line_positions[mi]
+            min_dist = 1e9
+            min_idx = None
 
-        light = light_positions[mi]
+            for idx,wp in enumerate(self.waypoints.waypoints):
+                wx, wy = wp.pose.pose.position.x, wp.pose.pose.position.y
+                dx = wx - stop_line_position[0]
+                dy = wy - stop_line_position[1]
+                dist =  np.sqrt(dx*dx + dy*dy)
+                if dist < min_dist:
+                    min_dist = dist
+                    min_idx = idx
 
+            return min_idx, self.get_light_state()
 
-        min_dist = 1e9
-        min_idx = None
+        else:
+            return -1, TrafficLight.UNKNOWN
 
-        for idx,wp in enumerate(self.waypoints.waypoints):
-            wx, wy = wp.pose.pose.position.x, wp.pose.pose.position.y
-            dx = wx - light[0]
-            dy = wy - light[1]
-            dist =  np.sqrt(dx*dx + dy*dy)
-            if dist < min_dist:
-                min_dist = dist
-                min_idx = idx
-        #print(min_idx)
-
-        if light:
-            state = self.get_light_state(light)
-            #print("state is %d"%state)
-
-            return min_idx, state
-
-        return -1, TrafficLight.UNKNOWN
 
 if __name__ == '__main__':
     try:
