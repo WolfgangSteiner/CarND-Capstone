@@ -120,7 +120,7 @@ class WaypointUpdater(object):
 
 
     def calc_waypoint_velocity(self, idx):
-        if self.red_tl_waypoint_idx == -1
+        if self.red_tl_waypoint_idx == -1:
             return self.target_velocity
         else:
             return 0.0
