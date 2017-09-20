@@ -44,12 +44,16 @@ class WaypointUpdater(object):
         self.py = None
         self.yaw = None
         self.velocity = None
+        self.waypoints = None
         self.current_waypoint_idx = None
         self.target_velocity = 10.0
         self.state = STATE_KEEP_VELOCITY
         self.red_tl_waypoint_idx = -1
 
-        rospy.spin()
+        r = rospy.Rate(10)
+        while not rospy.is_shutdown():
+            self.publish_waypoints()
+            r.sleep()
 
 
     def pose_cb(self, msg):
@@ -94,7 +98,7 @@ class WaypointUpdater(object):
         return wx > 0.0
 
 
-    def find_closest_waypoint(self, waypoints_msg):
+    def find_closest_waypoint(self):
         """
         Find the closest waypoint to the current vehicle position.
         :param waypoints_msg: Waypoints message containing global waypoints.
@@ -103,16 +107,16 @@ class WaypointUpdater(object):
         min_dist = 1e9
         min_idx = None
 
-        for idx,wp in enumerate(waypoints_msg.waypoints):
+        for idx,wp in enumerate(self.waypoints):
             dist = self.distance_to_waypoint(wp)
             if dist < min_dist:
                 min_dist = dist
                 min_idx = idx
 
         # Ensure that the closest waypoint is in front of the car:
-        num_wp = len(waypoints_msg.waypoints)
+        num_wp = len(self.waypoints)
         closest_idx = min_idx
-        closest_wp = waypoints_msg.waypoints[closest_idx]
+        closest_wp = self.waypoints[closest_idx]
         if not self.is_waypoint_ahead(closest_wp):
             closest_idx = (closest_idx + 1) % num_wp
 
@@ -120,23 +124,27 @@ class WaypointUpdater(object):
 
 
     def calc_waypoint_velocity(self, idx):
-        if self.red_tl_waypoint_idx == -1
+        if self.red_tl_waypoint_idx == -1:
             return self.target_velocity
         else:
             return 0.0
 
 
     def waypoints_cb(self, waypoints_msg):
-        if self.px is None:
+        self.waypoints = waypoints_msg.waypoints
+
+
+    def publish_waypoints(self):
+        if self.px is None or self.waypoints is None:
             return
 
         lane = Lane()
-        num_wp = len(waypoints_msg.waypoints)
-        current_idx = self.find_closest_waypoint(waypoints_msg)
+        num_wp = len(self.waypoints)
+        current_idx = self.find_closest_waypoint()
 
         # Generate final waypoints:
         for i in range(LOOKAHEAD_WPS):
-            wp = waypoints_msg.waypoints[current_idx]
+            wp = self.waypoints[current_idx]
             new_wp = Waypoint()
             new_wp.pose = wp.pose
             new_wp.twist.twist.linear.x = self.calc_waypoint_velocity(i)
