@@ -139,7 +139,7 @@ class WaypointUpdater(object):
         elif wp_distance >= threshold:
             return self.target_velocity
         
-        elif(np.abs(self.red_tl_waypoint_idx - ego_idx))!=0:
+        else:
             #fitting with x^2, normalized by self.velocity*5
             # weight = (wp_distance/self.velocity*5)**2
 
@@ -153,8 +153,6 @@ class WaypointUpdater(object):
             if vel < 1:
                 vel = 0
             return vel
-        else:
-            return 0.0
 
 
     def waypoints_cb(self, waypoints_msg):
