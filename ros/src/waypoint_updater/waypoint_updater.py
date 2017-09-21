@@ -7,6 +7,7 @@ from styx_msgs.msg import Lane, Waypoint
 
 import math
 import tf
+import numpy as np
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -49,6 +50,8 @@ class WaypointUpdater(object):
         self.target_velocity = 10.0
         self.state = STATE_KEEP_VELOCITY
         self.red_tl_waypoint_idx = -1
+
+        self.initial_update = True
 
         r = rospy.Rate(10)
         while not rospy.is_shutdown():
@@ -123,9 +126,33 @@ class WaypointUpdater(object):
         return closest_idx
 
 
-    def calc_waypoint_velocity(self, idx):
+    def calc_waypoint_velocity(self, idx, ego_idx):
+        #need to tune both paramator, at least keeping 10 waypoints
+        #start slowing down from self.velocity*5 away 
+        threshold = max(10,self.velocity*5)
+
+        wp_distance = np.abs(self.red_tl_waypoint_idx - ego_idx)
+
         if self.red_tl_waypoint_idx == -1:
             return self.target_velocity
+        
+        elif wp_distance >= threshold:
+            return self.target_velocity
+        
+        elif(np.abs(self.red_tl_waypoint_idx - ego_idx))!=0:
+            #fitting with x^2, normalized by self.velocity*5
+            # weight = (wp_distance/self.velocity*5)**2
+
+            #fitting with 1/e^x
+            weight = 1/np.exp(wp_distance)
+            # print("weight", weight)
+            # print ("velocity: ", self.velocity)
+            vel = self.velocity*weight
+            # cut off: there might be better way
+            # this is also hyperparameter
+            if vel < 1:
+                vel = 0
+            return vel
         else:
             return 0.0
 
@@ -141,15 +168,20 @@ class WaypointUpdater(object):
         lane = Lane()
         num_wp = len(self.waypoints)
         current_idx = self.find_closest_waypoint()
-
+        closest = current_idx
         # Generate final waypoints:
+        # print("start looping ----------------------------------")
+        # print("distance between ego and tl", (self.red_tl_waypoint_idx - current_idx))
+        # print("threshold", self.velocity*5)
         for i in range(LOOKAHEAD_WPS):
             wp = self.waypoints[current_idx]
             new_wp = Waypoint()
             new_wp.pose = wp.pose
-            new_wp.twist.twist.linear.x = self.calc_waypoint_velocity(i)
+            new_wp.twist.twist.linear.x = self.calc_waypoint_velocity(i,closest)
+            # print(new_wp.twist.twist.linear.x)
             lane.waypoints.append(new_wp)
             current_idx = (current_idx + 1) % num_wp
+
 
         self.final_waypoints_pub.publish(lane)
 
