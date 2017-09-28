@@ -38,6 +38,9 @@ class Trajectory:
             end_state,
             duration)
 
+        # Update the end position based on the polynomial:
+        trajectory.end_state[0] = trajectory.polynomial(duration - delay)
+
         return trajectory
 
 
@@ -133,6 +136,9 @@ class Trajectory:
 
 
     def velocity_at_position(self, x):
+        if x >= self.end_state[0]:
+            return self.end_state[1]
+
         t = self.time_for_position(x)
 
         if t == float('inf'):
