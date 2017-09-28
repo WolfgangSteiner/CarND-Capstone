@@ -19,7 +19,21 @@ class Trajectory:
             start_state, end_state, duration,
             delay=delay, total_duration=total_duration, sample_rate=sample_rate)
 
-        trajectory.polynomial = Trajectory.calc_polynomial(
+        trajectory.polynomial = Trajectory.calc_quintic_polynomial(
+            trajectory.state_at_time(delay),
+            end_state,
+            duration)
+
+        return trajectory
+
+
+    @staticmethod
+    def VelocityKeepingTrajectory(start_state, end_state, duration, delay=0.0, total_duration=10.0, sample_rate=100.0):
+        trajectory = Trajectory(
+            start_state, end_state, duration,
+            delay=delay, total_duration=total_duration, sample_rate=sample_rate)
+
+        trajectory.polynomial = Trajectory.calc_quartic_polynomial(
             trajectory.state_at_time(delay),
             end_state,
             duration)
@@ -144,7 +158,7 @@ class Trajectory:
 
 
     @staticmethod
-    def calc_polynomial(start_state, end_state, duration):
+    def calc_quintic_polynomial(start_state, end_state, duration):
         s0, sd0, sdd0 = start_state
         s1, sd1, sdd1 = end_state
 
@@ -170,6 +184,31 @@ class Trajectory:
         coeffs2 = np.dot(np.linalg.inv(A),x)
 
         return Polynomial(np.concatenate((coeffs1, coeffs2.reshape((3,))), axis=0))
+
+
+    @staticmethod
+    def calc_quartic_polynomial(start_state, end_state, duration):
+        s0, sd0, sdd0 = start_state
+        s1, sd1, sdd1 = end_state
+
+        dT1 = duration
+        dT2 = dT1 * dT1
+        dT3 = dT2 * dT1
+
+        x = np.array([
+            [sd1 - sd0 - sdd0 * dT1],
+            [sdd1 - sdd0]
+        ])
+
+        A = np.array([
+            [3*dT2,  4*dT3],
+            [6*dT1, 12*dT2]
+        ])
+
+        coeffs1 = np.array([s0, sd0, 0.5 * sdd0])
+        coeffs2 = np.dot(np.linalg.inv(A),x)
+
+        return Polynomial(np.concatenate((coeffs1, coeffs2.reshape((2,))), axis=0))
 
 
 if __name__ == "__main__":
