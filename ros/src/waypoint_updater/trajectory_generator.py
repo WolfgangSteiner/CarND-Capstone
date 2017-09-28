@@ -11,11 +11,27 @@ class TrajectoryGenerator(object):
         self.trajectories = []
         self.time_step = 0.5
 
-        for duration in np.arange(1.0, self.planning_horizon + 0.1, self.time_step):
-            for delay in np.arange(0.0, self.planning_horizon - duration + 0.1, self.time_step):
-                tr = Trajectory.StoppingTrajectory(self.start_state, self.end_state, duration, delay)
+
+    @staticmethod
+    def CreateGenerator(start_state, end_state, generator_func):
+        gen = TrajectoryGenerator(start_state, end_state)
+        for duration in np.arange(1.0, gen.planning_horizon + 0.1, gen.time_step):
+            for delay in np.arange(0.0, gen.planning_horizon - duration + 0.1, gen.time_step):
+                tr = generator_func(gen.start_state, gen.end_state, duration, delay)
                 if tr.cost() < float('inf'):
-                    self.trajectories.append(tr)
+                    gen.trajectories.append(tr)
+
+        return gen
+
+
+    @staticmethod
+    def StoppingTrajectoryGenerator(start_state, end_state):
+        return TrajectoryGenerator.CreateGenerator(start_state, end_state, Trajectory.StoppingTrajectory)
+
+
+    @staticmethod
+    def VelocityKeepingTrajectoryGenerator(start_state, end_state):
+        return TrajectoryGenerator.CreateGenerator(start_state, end_state, Trajectory.VelocityKeepingTrajectory)
 
 
     def minimum_cost_trajectory(self):
@@ -38,7 +54,7 @@ if __name__ == "__main__":
     delta_s = 50.0
     s0 = [0, v0, 0]
     s1 = [delta_s, 0, 0]
-    gen = TrajectoryGenerator(s0, s1)
+    gen = TrajectoryGenerator.StoppingTrajectoryGenerator(s0, s1)
 
     fig = plt.figure()
     num_figs = 6
