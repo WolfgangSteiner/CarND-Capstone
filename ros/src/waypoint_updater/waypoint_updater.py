@@ -138,10 +138,15 @@ class WaypointUpdater(object):
         if self.px is None or self.waypoints is None:
             return
 
+        current_idx = self.find_closest_waypoint()
+        self.update_trajectory(current_idx)
+        lane = self.execute_trajectory(current_idx)
+        self.final_waypoints_pub.publish(lane)
+
+
+    def execute_trajectory(self, current_idx):
         lane = Lane()
         num_wp = len(self.waypoints)
-        current_idx = self.find_closest_waypoint()
-
         # Generate final waypoints:
         for i in range(LOOKAHEAD_WPS):
             wp = self.waypoints[current_idx]
@@ -151,7 +156,11 @@ class WaypointUpdater(object):
             lane.waypoints.append(new_wp)
             current_idx = (current_idx + 1) % num_wp
 
-        self.final_waypoints_pub.publish(lane)
+        return lane
+
+
+    def update_trajectory(self, current_idx):
+        pass
 
 
     def traffic_cb(self, msg):
