@@ -12,10 +12,19 @@ class Trajectory:
         self.max_jerk = 10.0
         self.max_acceleration = 10.0
 
-        self.polynomial = Trajectory.calc_polynomial(
-            self.state_at_time(self.delay),
-            self.end_state,#self.state_at_time(self.delay + self.duration),
-            self.duration)
+
+    @staticmethod
+    def StoppingTrajectory(start_state, end_state, duration, delay=0.0, total_duration=10.0, sample_rate=100.0):
+        trajectory = Trajectory(
+            start_state, end_state, duration,
+            delay=delay, total_duration=total_duration, sample_rate=sample_rate)
+
+        trajectory.polynomial = Trajectory.calc_polynomial(
+            trajectory.state_at_time(delay),
+            end_state,
+            duration)
+
+        return trajectory
 
 
     def position_at_time(self, t):
@@ -175,7 +184,7 @@ if __name__ == "__main__":
 
     for duration in np.arange(1.0, total_duration + 0.1, 1.0):
         for delay in np.arange(0.0, total_duration - duration + 0.1, 1.0):
-            tr = Trajectory(s0, s1, duration, delay)
+            tr = Trajectory.StoppingTrajectory(s0, s1, duration, delay)
 
             if tr.cost() < float('inf'):
                 trajectories.append(tr)

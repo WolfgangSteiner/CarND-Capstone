@@ -13,7 +13,7 @@ class TrajectoryGenerator(object):
 
         for duration in np.arange(1.0, self.planning_horizon + 0.1, self.time_step):
             for delay in np.arange(0.0, self.planning_horizon - duration + 0.1, self.time_step):
-                tr = Trajectory(self.start_state, self.end_state, duration, delay)
+                tr = Trajectory.StoppingTrajectory(self.start_state, self.end_state, duration, delay)
                 if tr.cost() < float('inf'):
                     self.trajectories.append(tr)
 
