@@ -5,7 +5,7 @@ from std_msgs.msg import Int32, Float64
 from geometry_msgs.msg import PoseStamped,TwistStamped
 from styx_msgs.msg import Lane, Waypoint
 import numpy as np
-
+from trajectory import Trajectory
 import math
 import tf
 
@@ -31,7 +31,7 @@ STATE_WAIT_AT_TL = 2
 
 class WaypointUpdater(object):
     def __init__(self):
-        rospy.init_node('waypoint_updater')
+        rospy.init_node('waypoint_updater', log_level=rospy.DEBUG)
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -53,6 +53,8 @@ class WaypointUpdater(object):
         self.target_velocity = rospy.get_param('~velocity', 40.0) / 3.6
         self.state = STATE_KEEP_VELOCITY
         self.red_tl_waypoint_idx = -1
+        self.trajectory_start_idx = -1
+        self.trajectory = None
 
         r = rospy.Rate(10)
 
@@ -200,12 +202,18 @@ class WaypointUpdater(object):
     def execute_trajectory(self, current_idx):
         lane = Lane()
         num_wp = len(self.waypoints)
-        # Generate final waypoints:
+        dist = self.distance(self.trajectory_start_idx, current_idx)
+        last_idx = current_idx
+        #self.distance(self.trajectory_start_idx, current_idx)
+        # Generate final waypoints
         for i in range(LOOKAHEAD_WPS):
             wp = self.waypoints[current_wp_idx]
             new_wp = Waypoint()
             new_wp.pose = wp.pose
-            new_wp.twist.twist.linear.x = self.calc_waypoint_velocity(i)
+            dist += self.distance(last_idx, current_idx)
+            vel = self.trajectory.velocity_at_position(dist)
+            last_idx = current_idx
+            new_wp.twist.twist.linear.x = vel
             lane.waypoints.append(new_wp)
             current_wp_idx = (current_wp_idx + 1) % num_wp
 
@@ -213,7 +221,12 @@ class WaypointUpdater(object):
 
 
     def update_trajectory(self, current_idx):
-        pass
+        if self.trajectory is None:
+            self.trajectory_start_idx = current_idx - 1
+            s0 = [0.0, 0.0, 0.0]
+            s1 = [0.0, self.target_velocity, 0.0]
+            duration = 4.0
+            self.trajectory = Trajectory.VelocityKeepingTrajectory(s0, s1, duration)
 
 
     def traffic_cb(self, msg):
@@ -233,11 +246,11 @@ class WaypointUpdater(object):
         waypoints[waypoint].twist.twist.linear.x = velocity
 
 
-    def distance(self, waypoints, wp1, wp2):
+    def distance(self, wp1, wp2):
         dist = 0
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
         for i in range(wp1, wp2+1):
-            dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
+            dist += dl(self.waypoints[wp1].pose.pose.position, self.waypoints[i].pose.pose.position)
             wp1 = i
         return dist
 
