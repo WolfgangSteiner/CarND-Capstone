@@ -68,7 +68,7 @@ class WaypointUpdater(object):
         orientation = msg.pose.orientation
         q = [orientation.x, orientation.y, orientation.z, orientation.w]
         _,_,self.yaw = tf.transformations.euler_from_quaternion(q)
-        rospy.logdebug("px = %.2f, py = %.2f, yaw = %.2f", self.px, self.py, self.yaw)
+        # rospy.logdebug("px = %.2f, py = %.2f, yaw = %.2f", self.px, self.py, self.yaw)
 
 
     def velocity_cb(self, msg):
@@ -142,7 +142,7 @@ class WaypointUpdater(object):
             return
 
         current_idx = self.find_closest_waypoint()
-        self.update_trajectory(current_idx)
+        # self.update_trajectory(current_idx)
         lane = self.execute_trajectory(current_idx)
         self.final_waypoints_pub.publish(lane)
 
@@ -151,15 +151,44 @@ class WaypointUpdater(object):
         lane = Lane()
         num_wp = len(self.waypoints)
         dist = self.distance(self.trajectory_start_idx, current_idx)
+        dist_to_redtl = self.distance(current_idx, self.red_tl_waypoint_idx)
+
+
+        # reset trajectory
+        print("current idx", current_idx)
+        print("nearest tl", self.red_tl_waypoint_idx)
+
+        #we can get information since tl locations are given
+        tl_idx = [292, 753, 2047, 2580, 6294, 7008, 8540, 9733]
+        #reset trajectory
+        # rospy.logdebug(self.red_tl_waypoint_idx)
+        if ((current_idx + 100) in tl_idx):
+            self.trajectory = None
+            rospy.logdebug("2: delet it!!!")
+
+
+        start_slowing_down = False
+        #when there is a red traffic light and located less than 50 
+        if self.red_tl_waypoint_idx != -1 and dist_to_redtl < 75:
+            # print(dist_to_redtl)
+            self.update_trajectory(current_idx)
+            start_slowing_down = True
+
+
         last_idx = current_idx
-        #self.distance(self.trajectory_start_idx, current_idx)
+        
         # Generate final waypoints
         for i in range(LOOKAHEAD_WPS):
             wp = self.waypoints[current_idx]
             new_wp = Waypoint()
             new_wp.pose = wp.pose
-            dist += self.distance(last_idx, current_idx)
-            vel = self.trajectory.velocity_at_position(dist)
+
+            if start_slowing_down:
+                dist += self.distance(last_idx, current_idx)
+                vel = self.trajectory.velocity_at_position(dist)
+            else: vel = self.target_velocity
+
+
             last_idx = current_idx
             new_wp.twist.twist.linear.x = vel
             lane.waypoints.append(new_wp)
@@ -171,10 +200,21 @@ class WaypointUpdater(object):
     def update_trajectory(self, current_idx):
         if self.trajectory is None:
             self.trajectory_start_idx = current_idx - 1
-            s0 = [0.0, 0.0, 0.0]
-            s1 = [0.0, self.target_velocity, 0.0]
-            duration = 4.0
-            self.trajectory = Trajectory.VelocityKeepingTrajectory(s0, s1, duration)
+
+            # not considering red tl
+            # target_idx = current_idx + LOOKAHEAD_WPS
+            target_distance = self.distance(current_idx, self.red_tl_waypoint_idx)
+            print("target distance", target_distance)
+            print("ego velocity", self.velocity)
+            # [s, v, a] 
+            s0 = [0.0, self.velocity, 0.0]
+            s1 = [target_distance, 0.0, 0.0]
+            # duration = 4.0
+            duration = 10.0
+            # self.trajectory = Trajectory.VelocityKeepingTrajectory(s0, s1, duration)
+            self.trajectory = Trajectory.StoppingTrajectory(s0, s1, duration)
+            rospy.logdebug("1: finished making trajectory")
+
 
 
     def traffic_cb(self, msg):
