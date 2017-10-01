@@ -142,12 +142,13 @@ class WaypointUpdater(object):
             return
 
         current_idx = self.find_closest_waypoint()
-        # self.update_trajectory(current_idx)
         lane = self.execute_trajectory(current_idx)
         self.final_waypoints_pub.publish(lane)
 
 
     def execute_trajectory(self, current_idx):
+        #To Do: trajectory generation paramator tuning, how to manage one time trajectory update. 
+
         lane = Lane()
         num_wp = len(self.waypoints)
         dist = self.distance(self.trajectory_start_idx, current_idx)
