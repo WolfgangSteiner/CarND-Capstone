@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 import rospy
-from std_msgs.msg import Int32
+from std_msgs.msg import Int32, Float64
 from geometry_msgs.msg import PoseStamped,TwistStamped
 from styx_msgs.msg import Lane, Waypoint
+import numpy as np
 
 import math
 import tf
@@ -38,6 +39,8 @@ class WaypointUpdater(object):
         rospy.Subscriber('/obstacle_waypoint', Waypoint, self.obstacle_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
+        self.cte_pub = rospy.Publisher('current_cte', Float64, queue_size=10)
+
 
         # Member variables for the 2d vehicle pose:
         self.px = None
@@ -51,8 +54,14 @@ class WaypointUpdater(object):
         self.red_tl_waypoint_idx = -1
 
         r = rospy.Rate(10)
+
+        while self.px is None or self.waypoints is None:
+            r.sleep()
+
         while not rospy.is_shutdown():
-            self.publish_waypoints()
+            current_idx = self.find_closest_waypoint()
+            self.publish_waypoints(current_idx)
+            self.publish_cte(current_idx)
             r.sleep()
 
 
@@ -134,22 +143,58 @@ class WaypointUpdater(object):
         self.waypoints = waypoints_msg.waypoints
 
 
-    def publish_waypoints(self):
-        if self.px is None or self.waypoints is None:
-            return
+    def get_waypoint_coords(self, current_wp_idx):
+        wp_coords = []
+        num_wp = len(self.waypoints)
+        for i in range(LOOKAHEAD_WPS):
+            wp = self.waypoints[current_wp_idx]
+            wp_coords.append([wp.pose.pose.position.x, wp.pose.pose.position.y, 1.0])
+            current_wp_idx = (current_wp_idx + 1) % num_wp
 
+        return np.array(wp_coords)
+
+
+    def transformation_matrix(self):
+        phi = self.yaw
+        R = [[np.cos(-phi), -np.sin(-phi), 0.0],
+             [np.sin(-phi),  np.cos(-phi), 0.0],
+             [         0.0,           0.0, 1.0]]
+
+        T = [[1.0, 0.0, -self.px],
+             [0.0, 1.0, -self.py],
+             [0.0, 0.0,      1.0]]
+
+        return np.dot(R,T)
+
+
+    def transform_waypoints_to_local(self, wp_coords_global):
+        m = self.transformation_matrix()
+        return np.dot(wp_coords_global,m.transpose())
+
+
+    def fit_polynomial(self, wp_coords_local):
+        return np.polynomial.polynomial.polyfit(wp_coords_local[:,0], wp_coords_local[:,1], 3)
+
+
+    def publish_cte(self, current_wp_idx):
+        wp_coords_global = self.get_waypoint_coords(current_wp_idx)
+        wp_coords_local = self.transform_waypoints_to_local(wp_coords_global)
+        polynomial = self.fit_polynomial(wp_coords_local)
+        self.cte_pub.publish(polynomial[0])
+
+
+    def publish_waypoints(self, current_wp_idx):
         lane = Lane()
         num_wp = len(self.waypoints)
-        current_idx = self.find_closest_waypoint()
 
         # Generate final waypoints:
         for i in range(LOOKAHEAD_WPS):
-            wp = self.waypoints[current_idx]
+            wp = self.waypoints[current_wp_idx]
             new_wp = Waypoint()
             new_wp.pose = wp.pose
             new_wp.twist.twist.linear.x = self.calc_waypoint_velocity(i)
             lane.waypoints.append(new_wp)
-            current_idx = (current_idx + 1) % num_wp
+            current_wp_idx = (current_wp_idx + 1) % num_wp
 
         self.final_waypoints_pub.publish(lane)
 
