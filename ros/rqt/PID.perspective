@@ -5,7 +5,7 @@
       "keys": {
         "running-plugins": {
           "type": "repr", 
-          "repr": "{u'rqt_ez_publisher/EzPublisher': [1]}"
+          "repr": "{u'rqt_ez_publisher/EzPublisher': [1], u'rqt_plot/Plot': [1]}"
         }
       }, 
       "groups": {
@@ -21,6 +21,53 @@
                 "publish_interval": {
                   "type": "repr", 
                   "repr": "u'100'"
+                }
+              }, 
+              "groups": {}
+            }
+          }
+        }, 
+        "plugin__rqt_plot__Plot__1": {
+          "keys": {}, 
+          "groups": {
+            "dock_widget__DataPlotWidget": {
+              "keys": {
+                "dockable": {
+                  "type": "repr", 
+                  "repr": "True"
+                }, 
+                "parent": {
+                  "type": "repr", 
+                  "repr": "None"
+                }, 
+                "dock_widget_title": {
+                  "type": "repr", 
+                  "repr": "u'MatPlot'"
+                }
+              }, 
+              "groups": {}
+            }, 
+            "plugin": {
+              "keys": {
+                "autoscroll": {
+                  "type": "repr", 
+                  "repr": "True"
+                }, 
+                "plot_type": {
+                  "type": "repr", 
+                  "repr": "1"
+                }, 
+                "topics": {
+                  "type": "repr", 
+                  "repr": "[u'/vehicle/steering_cmd/steering_wheel_angle_cmd', u'/current_cte/data']"
+                }, 
+                "y_limits": {
+                  "type": "repr", 
+                  "repr": "[-8.0, 8.0]"
+                }, 
+                "x_limits": {
+                  "type": "repr", 
+                  "repr": "[158.97612619400024, 159.97612619400024]"
                 }
               }, 
               "groups": {}
@@ -63,7 +110,7 @@
                   "keys": {
                     "data_range": {
                       "type": "repr", 
-                      "repr": "(0.0, 1.0)"
+                      "repr": "(0.0, 16.0)"
                     }, 
                     "data_is_repeat": {
                       "type": "repr", 
@@ -76,7 +123,7 @@
                   "keys": {
                     "data_range": {
                       "type": "repr", 
-                      "repr": "(0.0, 1.0)"
+                      "repr": "(0.0, 0.1)"
                     }, 
                     "data_is_repeat": {
                       "type": "repr", 
@@ -121,13 +168,13 @@
       "keys": {
         "geometry": {
           "type": "repr(QByteArray.hex)", 
-          "repr(QByteArray.hex)": "QtCore.QByteArray('01d9d0cb0002000000000000000002d70000047f0000043700000000000002d70000047f0000043700000000000000000780')", 
-          "pretty-print": "           7       7     "
+          "repr(QByteArray.hex)": "QtCore.QByteArray('01d9d0cb0002000000000000000002270000053f0000043700000000000002270000053f0000043700000000000000000780')", 
+          "pretty-print": "       ' ? 7   ' ? 7     "
         }, 
         "state": {
           "type": "repr(QByteArray.hex)", 
-          "repr(QByteArray.hex)": "QtCore.QByteArray('000000ff00000000fd00000001000000030000048000000137fc0100000002fb0000006a007200710074005f0065007a005f007000750062006c00690073006800650072005f005f0045007a005000750062006c00690073006800650072005f005f0031005f005f0045007a005000750062006c006900730068006500720050006c007500670069006e005500690100000000000004800000030400fffffffb0000006a007200710074005f0065007a005f007000750062006c00690073006800650072005f005f0045007a005000750062006c00690073006800650072005f005f0032005f005f0045007a005000750062006c006900730068006500720050006c007500670069006e0055006901000002430000023d0000000000000000000004800000000000000004000000040000000800000008fc00000001000000030000000100000036004d0069006e0069006d0069007a006500640044006f0063006b00570069006400670065007400730054006f006f006c0062006100720000000000ffffffff0000000000000000')", 
-          "pretty-print": "                 jrqt_ez_publisher__EzPublisher__1__EzPublisherPluginUi          jrqt_ez_publisher__EzPublisher__2__EzPublisherPluginUi                            6MinimizedDockWidgetsToolbar        "
+          "repr(QByteArray.hex)": "QtCore.QByteArray('000000ff00000000fd000000010000000300000540000001e7fc0100000003fb0000006a007200710074005f0065007a005f007000750062006c00690073006800650072005f005f0045007a005000750062006c00690073006800650072005f005f0031005f005f0045007a005000750062006c006900730068006500720050006c007500670069006e0055006901000000000000037a0000030400fffffffb0000006a007200710074005f0065007a005f007000750062006c00690073006800650072005f005f0045007a005000750062006c00690073006800650072005f005f0032005f005f0045007a005000750062006c006900730068006500720050006c007500670069006e0055006901000002430000023d0000000000000000fb00000042007200710074005f0070006c006f0074005f005f0050006c006f0074005f005f0031005f005f00440061007400610050006c006f00740057006900640067006500740100000380000001c00000011c00ffffff000005400000000000000004000000040000000800000008fc00000001000000030000000100000036004d0069006e0069006d0069007a006500640044006f0063006b00570069006400670065007400730054006f006f006c0062006100720000000000ffffffff0000000000000000')", 
+          "pretty-print": "                 jrqt_ez_publisher__EzPublisher__1__EzPublisherPluginUi          jrqt_ez_publisher__EzPublisher__2__EzPublisherPluginUi          Brqt_plot__Plot__1__DataPlotWidget                            6MinimizedDockWidgetsToolbar        "
         }
       }, 
       "groups": {
