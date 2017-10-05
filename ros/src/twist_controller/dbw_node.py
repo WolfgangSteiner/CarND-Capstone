@@ -62,6 +62,8 @@ class DBWNode(object):
             max_steer_angle = self.max_steer_angle)
 
         self.lpf_accel = LowPassFilter(self.accel_tau, 1.0 / self.sample_rate_in_hertz)
+        self.lpf_steer = LowPassFilter(1.0, 1.0)
+        self.lpf_steer.set_filter_constant(0.25)
 
         # Publishers
         self.steer_pub = rospy.Publisher('/vehicle/steering_cmd', SteeringCmd, queue_size=1)
@@ -97,7 +99,7 @@ class DBWNode(object):
                 self.current_acceleration,
                 self.current_cte)
 
-            self.publish(throttle, brake, steer)
+            self.publish(throttle, brake, self.lpf_steer.filter(steer))
 
             rate.sleep()
 
@@ -129,8 +131,7 @@ class DBWNode(object):
     def velocity_cb(self, msg):
         if self.current_linear_velocity is not None:
             raw_accel = self.sample_rate_in_hertz * (self.current_linear_velocity - msg.twist.linear.x)
-            self.lpf_accel.filt(raw_accel)
-            self.current_acceleration = self.lpf_accel.get()
+            self.current_acceleration = self.lpf_accel.filter(raw_accel)
 
         self.current_linear_velocity = msg.twist.linear.x
         self.current_angular_velocity = msg.twist.angular.z
