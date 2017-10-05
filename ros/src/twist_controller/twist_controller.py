@@ -16,15 +16,20 @@ class Controller(object):
         self.fuel_capacity = kwargs["fuel_capacity"]
         self.decel_limit = kwargs["decel_limit"]
         self.accel_limit = kwargs["accel_limit"]
+        self.max_steer_angle = kwargs["max_steer_angle"]
         self.linear_velocity_pid = PID(1.0, 0.1, 0.5, mn=-fabs(self.decel_limit), mx=self.accel_limit)
         self.accel_pid = PID(0.4, 0.1, 0.0, mn=0.0, mx=1.0)
-        self.angluar_velocity_pid = PID(10.0, 0.1, 0.5, mn=-0.43, mx=0.43)
+        self.steering_pid_parameters = kwargs.get("steering_pid_parameters", [0.125, 0.0, 0.0])
+        steer_p, steer_i, steer_d = self.steering_pid_parameters
+        self.angluar_velocity_pid = PID(
+            steer_p, steer_i, steer_d,
+            mn=-self.max_steer_angle, mx=self.max_steer_angle)
 
 
     def control(self,
         target_linear_velocity, target_angular_velocity,
         current_linear_velocity, current_angular_velocity,
-        current_accel):
+        current_accel, current_cte):
         sample_time = 1.0 / self.sample_rate_in_hertz
 
         # we don't know fuel level, so we use 100% of fuel_capacity.
@@ -32,7 +37,15 @@ class Controller(object):
 
         vel_error = target_linear_velocity - current_linear_velocity
         accel_cmd = self.linear_velocity_pid.step(vel_error, sample_time)
-        steer = self.angluar_velocity_pid.step(target_angular_velocity, sample_time)
+
+        # [wsteiner] WORK IN PROGRESS!!!
+        TEST_STEER_PID = True
+        if TEST_STEER_PID:
+            steer_error = current_cte
+        else:
+            steer_error = target_angular_velocity
+
+        steer = self.angluar_velocity_pid.step(steer_error, sample_time)
 
         if (target_linear_velocity <= 1e-2):
             accel_cmd = min(accel_cmd, -530.0 / vehicle_mass / self.wheel_radius)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Float64
 from dbw_mkz_msgs.msg import ThrottleCmd, SteeringCmd, BrakeCmd, SteeringReport
 from geometry_msgs.msg import TwistStamped
 import math
@@ -41,14 +41,15 @@ class DBWNode(object):
         self.current_linear_velocity = None
         self.current_angular_velocity = None
         self.current_acceleration = None
+        self.current_cte = None
         self.dbw_enabled = None
         self.accel_tau = 0.5
         self.sample_rate_in_hertz = 50.0 # 50Hz
 
-        wheel_base = rospy.get_param('~wheel_base', 2.8498)
-        steer_ratio = rospy.get_param('~steer_ratio', 14.8)
-        max_lat_accel = rospy.get_param('~max_lat_accel', 3.)
-        max_steer_angle = rospy.get_param('~max_steer_angle', 8.)
+        self.wheel_base = rospy.get_param('~wheel_base', 2.8498)
+        self.steer_ratio = rospy.get_param('~steer_ratio', 14.8)
+        self.max_lat_accel = rospy.get_param('~max_lat_accel', 3.)
+        self.max_steer_angle = rospy.get_param('~max_steer_angle', 8.)
 
         self.controller = Controller(
             sample_rate_in_hertz = self.sample_rate_in_hertz,
@@ -57,7 +58,8 @@ class DBWNode(object):
             brake_deadband = rospy.get_param('~brake_deadband', .1),
             wheel_radius = rospy.get_param('~wheel_radius', 0.2413),
             decel_limit = rospy.get_param('~decel_limit', -5),
-            accel_limit = rospy.get_param('~accel_limit', 1.))
+            accel_limit = rospy.get_param('~accel_limit', 1.),
+            max_steer_angle = self.max_steer_angle)
 
         self.lpf_accel = LowPassFilter(self.accel_tau, 1.0 / self.sample_rate_in_hertz)
 
@@ -70,6 +72,10 @@ class DBWNode(object):
         rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cb)
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
+        rospy.Subscriber('/current_cte', Float64, self.cte_cb)
+        rospy.Subscriber('/steering_controller_p', Float64, self.steering_controller_p_cb)
+        rospy.Subscriber('/steering_controller_i', Float64, self.steering_controller_i_cb)
+        rospy.Subscriber('/steering_controller_d', Float64, self.steering_controller_d_cb)
 
         self.loop()
 
@@ -79,6 +85,7 @@ class DBWNode(object):
         while not rospy.is_shutdown():
             if self.current_linear_velocity is None \
             or self.target_linear_velocity is None \
+            or self.current_cte is None \
             or not self.dbw_enabled:
                 continue
 
@@ -87,7 +94,8 @@ class DBWNode(object):
                 self.target_angular_velocity,
                 self.current_linear_velocity,
                 self.current_angular_velocity,
-                self.current_acceleration)
+                self.current_acceleration,
+                self.current_cte)
 
             self.publish(throttle, brake, steer)
 
@@ -136,6 +144,25 @@ class DBWNode(object):
         else:
             rospy.loginfo('DBW disabled. Resetting Twist Controller.')
             self.controller.reset()
+
+
+    def cte_cb(self, msg):
+        self.current_cte = msg.data
+
+
+    def steering_controller_p_cb(self, msg):
+        rospy.logdebug("Setting P to %.2f", msg.data)
+        self.controller.angluar_velocity_pid.kp = msg.data
+
+
+    def steering_controller_i_cb(self, msg):
+        rospy.logdebug("Setting I to %.2f", msg.data)
+        self.controller.angluar_velocity_pid.ki = msg.data
+
+
+    def steering_controller_d_cb(self, msg):
+        rospy.logdebug("Setting D to %.2f", msg.data)
+        self.controller.angluar_velocity_pid.kd = msg.data
 
 
 if __name__ == '__main__':

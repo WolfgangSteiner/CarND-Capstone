@@ -37,6 +37,7 @@ class WaypointUpdater(object):
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
         rospy.Subscriber('/obstacle_waypoint', Waypoint, self.obstacle_cb)
+        rospy.Subscriber('/target_velocity', Float64, self.target_velocity_cb)
 
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
         self.cte_pub = rospy.Publisher('current_cte', Float64, queue_size=10)
@@ -49,7 +50,7 @@ class WaypointUpdater(object):
         self.velocity = None
         self.waypoints = None
         self.current_waypoint_idx = None
-        self.target_velocity = 10.0
+        self.target_velocity = rospy.get_param('~velocity', 40.0) / 3.6
         self.state = STATE_KEEP_VELOCITY
         self.red_tl_waypoint_idx = -1
 
@@ -79,6 +80,10 @@ class WaypointUpdater(object):
 
     def velocity_cb(self, msg):
         self.velocity = msg.twist.linear.x
+
+
+    def target_velocity_cb(self, msg):
+        self.target_velocity = msg.data
 
 
     def distance_to_waypoint(self, wp):
@@ -133,7 +138,9 @@ class WaypointUpdater(object):
 
 
     def calc_waypoint_velocity(self, idx):
-        if self.red_tl_waypoint_idx == -1:
+        # [wsteiner] WORK IN PROGRESS!!!
+        TEST_PID_CONTROLLER = True
+        if TEST_PID_CONTROLLER or self.red_tl_waypoint_idx == -1:
             return self.target_velocity
         else:
             return 0.0
