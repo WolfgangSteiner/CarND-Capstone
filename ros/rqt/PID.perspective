@@ -1,0 +1,146 @@
+{
+  "keys": {}, 
+  "groups": {
+    "pluginmanager": {
+      "keys": {
+        "running-plugins": {
+          "type": "repr", 
+          "repr": "{u'rqt_ez_publisher/EzPublisher': [1]}"
+        }
+      }, 
+      "groups": {
+        "plugin__rqt_ez_publisher__EzPublisher__2": {
+          "keys": {}, 
+          "groups": {
+            "plugin": {
+              "keys": {
+                "texts": {
+                  "type": "repr", 
+                  "repr": "None"
+                }, 
+                "publish_interval": {
+                  "type": "repr", 
+                  "repr": "u'100'"
+                }
+              }, 
+              "groups": {}
+            }
+          }
+        }, 
+        "plugin__rqt_ez_publisher__EzPublisher__1": {
+          "keys": {}, 
+          "groups": {
+            "dock_widget__EzPublisherPluginUi": {
+              "keys": {
+                "dockable": {
+                  "type": "repr", 
+                  "repr": "True"
+                }, 
+                "parent": {
+                  "type": "repr", 
+                  "repr": "None"
+                }, 
+                "dock_widget_title": {
+                  "type": "repr", 
+                  "repr": "u''"
+                }
+              }, 
+              "groups": {}
+            }, 
+            "plugin": {
+              "keys": {
+                "texts": {
+                  "type": "repr", 
+                  "repr": "[u'/steering_controller_p/data', u'/steering_controller_i/data', u'/steering_controller_d/data', u'/target_velocity/data']"
+                }, 
+                "publish_interval": {
+                  "type": "repr", 
+                  "repr": "100"
+                }
+              }, 
+              "groups": {
+                "steering_controller_p": {
+                  "keys": {
+                    "data_range": {
+                      "type": "repr", 
+                      "repr": "(0.0, 1.0)"
+                    }, 
+                    "data_is_repeat": {
+                      "type": "repr", 
+                      "repr": "False"
+                    }
+                  }, 
+                  "groups": {}
+                }, 
+                "steering_controller_i": {
+                  "keys": {
+                    "data_range": {
+                      "type": "repr", 
+                      "repr": "(0.0, 1.0)"
+                    }, 
+                    "data_is_repeat": {
+                      "type": "repr", 
+                      "repr": "False"
+                    }
+                  }, 
+                  "groups": {}
+                }, 
+                "target_velocity": {
+                  "keys": {
+                    "data_range": {
+                      "type": "repr", 
+                      "repr": "(0.0, 30.0)"
+                    }, 
+                    "data_is_repeat": {
+                      "type": "repr", 
+                      "repr": "False"
+                    }
+                  }, 
+                  "groups": {}
+                }, 
+                "steering_controller_d": {
+                  "keys": {
+                    "data_range": {
+                      "type": "repr", 
+                      "repr": "(0.0, 1.0)"
+                    }, 
+                    "data_is_repeat": {
+                      "type": "repr", 
+                      "repr": "False"
+                    }
+                  }, 
+                  "groups": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    }, 
+    "mainwindow": {
+      "keys": {
+        "geometry": {
+          "type": "repr(QByteArray.hex)", 
+          "repr(QByteArray.hex)": "QtCore.QByteArray('01d9d0cb0002000000000000000002d70000047f0000043700000000000002d70000047f0000043700000000000000000780')", 
+          "pretty-print": "           7       7     "
+        }, 
+        "state": {
+          "type": "repr(QByteArray.hex)", 
+          "repr(QByteArray.hex)": "QtCore.QByteArray('000000ff00000000fd00000001000000030000048000000137fc0100000002fb0000006a007200710074005f0065007a005f007000750062006c00690073006800650072005f005f0045007a005000750062006c00690073006800650072005f005f0031005f005f0045007a005000750062006c006900730068006500720050006c007500670069006e005500690100000000000004800000030400fffffffb0000006a007200710074005f0065007a005f007000750062006c00690073006800650072005f005f0045007a005000750062006c00690073006800650072005f005f0032005f005f0045007a005000750062006c006900730068006500720050006c007500670069006e0055006901000002430000023d0000000000000000000004800000000000000004000000040000000800000008fc00000001000000030000000100000036004d0069006e0069006d0069007a006500640044006f0063006b00570069006400670065007400730054006f006f006c0062006100720000000000ffffffff0000000000000000')", 
+          "pretty-print": "                 jrqt_ez_publisher__EzPublisher__1__EzPublisherPluginUi          jrqt_ez_publisher__EzPublisher__2__EzPublisherPluginUi                            6MinimizedDockWidgetsToolbar        "
+        }
+      }, 
+      "groups": {
+        "toolbar_areas": {
+          "keys": {
+            "MinimizedDockWidgetsToolbar": {
+              "type": "repr", 
+              "repr": "8"
+            }
+          }, 
+          "groups": {}
+        }
+      }
+    }
+  }
+}
