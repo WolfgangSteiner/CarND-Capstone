@@ -19,7 +19,7 @@ class Controller(object):
         self.max_steer_angle = kwargs["max_steer_angle"]
         self.linear_velocity_pid = PID(1.0, 0.1, 0.5, mn=-fabs(self.decel_limit), mx=self.accel_limit)
         self.accel_pid = PID(0.4, 0.1, 0.0, mn=0.0, mx=1.0)
-        self.steering_pid_parameters = kwargs.get("steering_pid_parameters", [0.2, 0.002, 32.0])
+        self.steering_pid_parameters = kwargs.get("steering_pid_parameters", [0.1, 0.01, 32.0])
         steer_p, steer_i, steer_d = self.steering_pid_parameters
         max_steer = 1.0
         self.angluar_velocity_pid = PID(
