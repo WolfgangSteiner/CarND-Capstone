@@ -8,6 +8,7 @@ import math
 
 from twist_controller import Controller
 from lowpass import LowPassFilter
+from yaw_controller import YawController
 
 '''
 You can build this node only after you have built (or partially built) the `waypoint_updater` node.
@@ -45,6 +46,7 @@ class DBWNode(object):
         self.dbw_enabled = None
         self.accel_tau = 0.5
         self.sample_rate_in_hertz = 50.0 # 50Hz
+        self.min_speed = 1.0
 
         self.wheel_base = rospy.get_param('~wheel_base', 2.8498)
         self.steer_ratio = rospy.get_param('~steer_ratio', 14.8)
@@ -63,7 +65,13 @@ class DBWNode(object):
 
         self.lpf_accel = LowPassFilter(self.accel_tau, 1.0 / self.sample_rate_in_hertz)
         self.lpf_steer = LowPassFilter(1.0, 1.0)
-        self.lpf_steer.set_filter_constant(0.25)
+        self.lpf_steer.set_filter_constant(0.025)
+        self.yaw_controller = YawController(
+            self.wheel_base,
+            self.steer_ratio,
+            self.min_speed,
+            self.max_lat_accel,
+            self.max_steer_angle)
 
         # Publishers
         self.steer_pub = rospy.Publisher('/vehicle/steering_cmd', SteeringCmd, queue_size=1)
@@ -91,7 +99,7 @@ class DBWNode(object):
             or not self.dbw_enabled:
                 continue
 
-            throttle, brake, steer = self.controller.control(
+            throttle, brake, steer_a = self.controller.control(
                 self.target_linear_velocity,
                 self.target_angular_velocity,
                 self.current_linear_velocity,
@@ -99,7 +107,13 @@ class DBWNode(object):
                 self.current_acceleration,
                 self.current_cte)
 
-            self.publish(throttle, brake, self.lpf_steer.filter(steer))
+            steer_b = self.yaw_controller.get_steering(
+                self.target_linear_velocity,
+                self.target_angular_velocity,
+                self.current_linear_velocity)
+
+            steer = self.lpf_steer.filter(steer_a + steer_b)
+            self.publish(throttle, brake, steer)
 
             rate.sleep()
 
