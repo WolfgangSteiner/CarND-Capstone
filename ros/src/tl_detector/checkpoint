@@ -1,2 +1,2 @@
-model_checkpoint_path: "tldetector.tf-1000"
-all_model_checkpoint_paths: "tldetector.tf-1000"
+model_checkpoint_path: "tldetector-rev.tf-1000"
+all_model_checkpoint_paths: "tldetector-rev.tf-1000"
