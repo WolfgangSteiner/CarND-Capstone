@@ -16,4 +16,4 @@ if [ ! -f "$USER_PROFILE" ];
     unity_path=$(cat "$USER_PROFILE")
 fi
 
-$unity_path
+/home/henrik/CarND-Capstone/linux_sys_int/system_integration.x86_64

@@ -164,12 +164,15 @@ class TLDetector(object):
         g = np.sum(loc[0,0,:,:,2]>threshold)
         y = np.sum(loc[0,0,:,:,3]>threshold)
 
-        if(r+g+y)>10:
+        if(r+g+y)>5:
             if(r>=g and r>=y):
+                print("red detect")
                 return TrafficLight.RED
             elif(g>y):
+                print("green detect")
                 return TrafficLight.GREEN
             else:
+                print("yellow detect")
                 return TrafficLight.YELLOW
         else:
             return TrafficLight.UNKNOWN
