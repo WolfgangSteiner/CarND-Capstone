@@ -214,14 +214,14 @@ class WaypointUpdater(object):
         #self.distance(self.trajectory_start_idx, current_idx)
         # Generate final waypoints
         for i in range(LOOKAHEAD_WPS):
-            wp = self.waypoints[current_wp_idx]
+            wp = self.waypoints[current_idx]
             new_wp = Waypoint()
             new_wp.pose = wp.pose
             dist += self.distance(last_idx, current_idx)
             last_idx = current_idx
             new_wp.twist.twist.linear.x = self.trajectory.velocity_at_position(current_idx)
             lane.waypoints.append(new_wp)
-            current_wp_idx = (current_wp_idx + 1) % num_wp
+            current_idx = (current_idx + 1) % num_wp
 
         return lane
 
