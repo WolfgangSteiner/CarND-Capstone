@@ -5,6 +5,7 @@ from std_msgs.msg import Int32
 from geometry_msgs.msg import PoseStamped,TwistStamped
 from styx_msgs.msg import Lane, Waypoint
 from trajectory import Trajectory
+from trajectory_generator import TrajectoryGenerator
 
 import math
 import tf
@@ -25,13 +26,15 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
-STATE_KEEP_VELOCITY = 0
-STATE_SLOWING_DOWN = 1
-STATE_WAIT_AT_TL = 2
 
+class STATE:
+    KEEP_VELOCITY = 0
+    STOP_AT_TL = 1
+
+    
 class WaypointUpdater(object):
     def __init__(self):
-        rospy.init_node('waypoint_updater', log_level=rospy.DEBUG)
+        rospy.init_node('waypoint_updater', log_level=rospy.INFO)
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -47,11 +50,15 @@ class WaypointUpdater(object):
         self.velocity = None
         self.waypoints = None
         self.current_waypoint_idx = None
-        self.target_velocity = 10.0
-        self.state = STATE_KEEP_VELOCITY
+        self.target_velocity = 5.0
+        self.state = STATE.KEEP_VELOCITY
         self.red_tl_waypoint_idx = -1
         self.trajectory_start_idx = -1
         self.trajectory = None
+        self.current_velocity = 0.0
+        self.current_acceleration = 0.0
+        self.velocity_keeping_duration = 4.0
+        self.breaking_trajectory_duration = 10.0
 
         r = rospy.Rate(10)
         while not rospy.is_shutdown():
@@ -159,22 +166,66 @@ class WaypointUpdater(object):
             new_wp = Waypoint()
             new_wp.pose = wp.pose
             dist += self.distance(last_idx, current_idx)
-            vel = self.trajectory.velocity_at_position(dist)
             last_idx = current_idx
-            new_wp.twist.twist.linear.x = vel
+            new_wp.twist.twist.linear.x = self.trajectory.velocity_at_position(current_idx)
             lane.waypoints.append(new_wp)
             current_idx = (current_idx + 1) % num_wp
 
         return lane
 
 
+    def is_red_traffic_light_near(self, current_idx):
+        if self.red_tl_waypoint_idx == -1:
+            return False
+        
+        dist_to_tl = self.distance(current_idx, self.red_tl_waypoint_idx)
+        rospy.loginfo("dist_to_tl : %.2f", dist_to_tl)
+
+        if self.velocity < 0.1:
+            return dist_to_tl < 1.0
+        else:
+            time_to_tl = dist_to_tl / self.velocity
+            rospy.loginfo("time_to_tl : %.2f", time_to_tl)
+            return time_to_tl < self.breaking_trajectory_duration 
+
+
+    def distance_to_next_traffic_light(self, current_idx):
+        assert self.red_tl_waypoint_idx != -1
+        return self.distance(current_idx, self.red_tl_waypoint_idx)
+
+    
+    def switch_to_velocity_keeping(self, start_state):
+        end_state = [0.0, self.target_velocity, 0.0]
+
+        self.trajectory = Trajectory.VelocityKeepingTrajectory(
+            start_state, end_state, self.velocity_keeping_duration)
+
+        self.state = STATE.KEEP_VELOCITY
+
+
     def update_trajectory(self, current_idx):
         if self.trajectory is None:
             self.trajectory_start_idx = current_idx - 1
             s0 = [0.0, 0.0, 0.0]
-            s1 = [0.0, self.target_velocity, 0.0]
-            duration = 4.0
-            self.trajectory = Trajectory.VelocityKeepingTrajectory(s0, s1, duration)
+            self.switch_to_velocity_keeping(s0)
+    
+        else:
+            trajectory_dist = self.distance(self.trajectory_start_idx, current_idx)
+            _, vel, acc = self.trajectory.state_at_position(trajectory_dist)
+            s0 = [0.0, vel, acc]
+            tl_near = self.is_red_traffic_light_near(current_idx)
+
+            if self.state == STATE.KEEP_VELOCITY and tl_near:
+                s1 = [self.distance_to_next_traffic_light(current_idx), 0.0, 0.0]
+                gen = TrajectoryGenerator.StoppingTrajectoryGenerator(s0, s1)
+                new_trajectory = gen.minimum_cost_trajectory()
+
+                if new_trajectory is not None:
+                    self.trajectory = new_trajectory
+                    self.state = STATE.STOP_AT_TL
+
+            elif self.state == STATE.STOP_AT_TL and not tl_near:
+                self.switch_to_velocity_keeping(s0)
 
 
     def traffic_cb(self, msg):
