@@ -22,7 +22,7 @@ class Controller(object):
         self.steering_pid_parameters = kwargs.get("steering_pid_parameters", [0.1, 0.01, 32.0])
         steer_p, steer_i, steer_d = self.steering_pid_parameters
         max_steer = 1.0
-        self.angluar_velocity_pid = PID(
+        self.steer_pid = PID(
             steer_p, steer_i, steer_d,
             mn=-max_steer, mx=max_steer)
 
@@ -39,14 +39,7 @@ class Controller(object):
         vel_error = target_linear_velocity - current_linear_velocity
         accel_cmd = self.linear_velocity_pid.step(vel_error, sample_time)
 
-        # [wsteiner] WORK IN PROGRESS!!!
-        TEST_STEER_PID = True
-        if TEST_STEER_PID:
-            steer_error = current_cte
-        else:
-            steer_error = target_angular_velocity
-
-        steer = self.angluar_velocity_pid.step(steer_error, sample_time)
+        steer = self.steer_pid.step(current_cte, sample_time)
 
         if (target_linear_velocity <= 1e-2):
             accel_cmd = min(accel_cmd, -530.0 / vehicle_mass / self.wheel_radius)
@@ -70,4 +63,4 @@ class Controller(object):
 
     def reset(self):
         self.linear_velocity_pid.reset()
-        self.angluar_velocity_pid.reset()
+        self.steer_pid.reset()
