@@ -11,6 +11,7 @@ class Trajectory:
         self.sample_rate = sample_rate
         self.max_jerk = 10.0
         self.max_acceleration = 10.0
+        
 
 
     @staticmethod
@@ -145,6 +146,26 @@ class Trajectory:
             return 0.0
         else:
             return self.velocity_at_time(t)
+
+
+    def state_at_position(self, x):
+        state = np.zeros(3)
+        state[0] = x
+
+        if x >= self.end_state[0]:
+            state[1:3] = self.end_state[1:3]
+            return state
+
+        t = self.time_for_position(x)
+
+        if t == float('inf'):
+            state[1:3] = [0.0, 0.0]
+        else:
+            state[1] = self.velocity_at_time(t)
+            state[2] = self.acceleration_at_time(t)
+
+        return state
+
 
 
     def cost(self):
