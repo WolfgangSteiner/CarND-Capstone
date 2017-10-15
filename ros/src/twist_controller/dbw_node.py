@@ -167,17 +167,17 @@ class DBWNode(object):
 
     def steering_controller_p_cb(self, msg):
         rospy.logdebug("Setting P to %.2f", msg.data)
-        self.controller.angluar_velocity_pid.kp = msg.data
+        self.controller.steering_pid.kp = msg.data
 
 
     def steering_controller_i_cb(self, msg):
         rospy.logdebug("Setting I to %.2f", msg.data)
-        self.controller.angluar_velocity_pid.ki = msg.data
+        self.controller.steering_pid.ki = msg.data
 
 
     def steering_controller_d_cb(self, msg):
         rospy.logdebug("Setting D to %.2f", msg.data)
-        self.controller.angluar_velocity_pid.kd = msg.data
+        self.controller.steering_pid.kd = msg.data
 
 
 if __name__ == '__main__':
