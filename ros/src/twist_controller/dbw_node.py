@@ -88,9 +88,9 @@ class DBWNode(object):
         rospy.Subscriber('/steering_controller_i', Float64, self.steering_controller_i_cb)
         rospy.Subscriber('/steering_controller_d', Float64, self.steering_controller_d_cb)
 
-        rospy.Subscriber('/throttle_controller_p', Float64, self.throttle_controller_p_cb)
-        rospy.Subscriber('/throttle_controller_i', Float64, self.throttle_controller_i_cb)
-        rospy.Subscriber('/throttle_controller_d', Float64, self.steering_controller_d_cb)
+        rospy.Subscriber('/speed_controller_p', Float64, self.speed_controller_p_cb)
+        rospy.Subscriber('/speed_controller_i', Float64, self.speed_controller_i_cb)
+        rospy.Subscriber('/speed_controller_d', Float64, self.speed_controller_d_cb)
 
         self.loop()
 
@@ -185,19 +185,19 @@ class DBWNode(object):
         self.controller.steering_pid.kd = msg.data
 
 
-    def throttle_controller_p_cb(self, msg):
+    def speed_controller_p_cb(self, msg):
         rospy.logdebug("Setting P to %.2f", msg.data)
-        self.controller.throttle_pid.kp = msg.data
+        self.controller.speed_pid.kp = msg.data
 
 
-    def throttle_controller_i_cb(self, msg):
+    def speed_controller_i_cb(self, msg):
         rospy.logdebug("Setting I to %.2f", msg.data)
-        self.controller.throttle_pid.ki = msg.data
+        self.controller.speed_pid.ki = msg.data
 
 
-    def throttle_controller_d_cb(self, msg):
+    def speed_controller_d_cb(self, msg):
         rospy.logdebug("Setting D to %.2f", msg.data)
-        self.controller.throttle_pid.kd = msg.data
+        self.controller.speed_pid.kd = msg.data
 
 
 
