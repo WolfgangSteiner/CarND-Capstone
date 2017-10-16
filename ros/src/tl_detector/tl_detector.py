@@ -149,7 +149,7 @@ class TLDetector(object):
 
         """
 
-        if self.waypoints is None:
+        if self.waypoints is None or self.pose is None:
             return -1, TrafficLight.UNKNOWN
 
 
