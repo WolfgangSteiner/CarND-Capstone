@@ -130,13 +130,10 @@ class TLDetector(object):
 
         if(r+g+y)>5:
             if(r>=g and r>=y):
-                print("red detect")
                 return TrafficLight.RED
             elif(g>y):
-                print("green detect")
                 return TrafficLight.GREEN
             else:
-                print("yellow detect")
                 return TrafficLight.YELLOW
         else:
             return TrafficLight.UNKNOWN
