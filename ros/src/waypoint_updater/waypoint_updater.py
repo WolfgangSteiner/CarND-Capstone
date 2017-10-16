@@ -250,7 +250,7 @@ class WaypointUpdater(object):
         end_state = [0.0, self.target_velocity, 0.0]
 
         self.trajectory = Trajectory.VelocityKeepingTrajectory(
-            start_state, end_state, self.velocity_keeping_duration)
+            start_state, end_state, self.velocity_keeping_duration, 0.0)
 
         self.state = STATE.KEEP_VELOCITY
 
