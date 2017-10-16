@@ -219,7 +219,7 @@ class WaypointUpdater(object):
             new_wp.pose = wp.pose
             dist += self.distance(last_idx, current_idx)
             last_idx = current_idx
-            new_wp.twist.twist.linear.x = self.trajectory.velocity_at_position(current_idx)
+            new_wp.twist.twist.linear.x = self.trajectory.velocity_at_position(dist)
             lane.waypoints.append(new_wp)
             current_idx = (current_idx + 1) % num_wp
 
