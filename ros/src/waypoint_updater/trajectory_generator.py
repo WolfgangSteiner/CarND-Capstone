@@ -13,11 +13,11 @@ class TrajectoryGenerator(object):
 
 
     @staticmethod
-    def CreateGenerator(start_state, end_state, generator_func):
+    def CreateGenerator(start_state, end_state, generator_func, **kwargs):
         gen = TrajectoryGenerator(start_state, end_state)
         for duration in np.arange(1.0, gen.planning_horizon + 0.1, gen.time_step):
             for delay in np.arange(0.0, gen.planning_horizon - duration + 0.1, gen.time_step):
-                tr = generator_func(gen.start_state, gen.end_state, duration, delay)
+                tr = generator_func(gen.start_state, gen.end_state, duration, delay, **kwargs)
                 if tr.cost() < float('inf'):
                     gen.trajectories.append(tr)
 
@@ -25,13 +25,13 @@ class TrajectoryGenerator(object):
 
 
     @staticmethod
-    def StoppingTrajectoryGenerator(start_state, end_state):
-        return TrajectoryGenerator.CreateGenerator(start_state, end_state, Trajectory.StoppingTrajectory)
+    def StoppingTrajectoryGenerator(start_state, end_state, **kwargs):
+        return TrajectoryGenerator.CreateGenerator(start_state, end_state, Trajectory.StoppingTrajectory, **kwargs)
 
 
     @staticmethod
-    def VelocityKeepingTrajectoryGenerator(start_state, end_state):
-        return TrajectoryGenerator.CreateGenerator(start_state, end_state, Trajectory.VelocityKeepingTrajectory)
+    def VelocityKeepingTrajectoryGenerator(start_state, end_state, **kwargs):
+        return TrajectoryGenerator.CreateGenerator(start_state, end_state, Trajectory.VelocityKeepingTrajectory, **kwargs)
 
 
     def minimum_cost_trajectory(self):

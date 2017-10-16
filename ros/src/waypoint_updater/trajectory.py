@@ -10,16 +10,23 @@ class Trajectory:
         self.total_duration = total_duration
         self.sample_rate = sample_rate
         self.max_jerk = 10.0
-        self.max_acceleration = 10.0
-        
+        self.max_acceleration = 1.0
+        self.max_deceleraion = 5.0
 
 
     @staticmethod
-    def StoppingTrajectory(start_state, end_state, duration, delay=0.0, total_duration=10.0, sample_rate=100.0):
+    def StoppingTrajectory(start_state, end_state, duration, delay, **kwargs):
+        delay = kwargs.get('delay', 0.0)
+        total_duration = kwargs.get('total_duration', 10.0)
+        sample_rate = kwargs.get('sample_rate', 100.0)
+
         trajectory = Trajectory(
             start_state, end_state, duration,
             delay=delay, total_duration=total_duration, sample_rate=sample_rate)
 
+        trajectory.max_acceleration = kwargs.get('accel_limit', 1.0)
+        trajectory.max_deceleration = kwargs.get('decel_limit', 5.0)
+        
         trajectory.polynomial = Trajectory.calc_quintic_polynomial(
             trajectory.state_at_time(delay),
             end_state,
@@ -29,15 +36,22 @@ class Trajectory:
 
 
     @staticmethod
-    def VelocityKeepingTrajectory(start_state, end_state, duration, delay=0.0, total_duration=10.0, sample_rate=100.0):
+    def VelocityKeepingTrajectory(start_state, end_state, duration, delay, **kwargs):
+        delay = kwargs.get('delay', 0.0)
+        total_duration = kwargs.get('total_duration', 10.0)
+        sample_rate = kwargs.get('sample_rate', 100.0)
+
         trajectory = Trajectory(
             start_state, end_state, duration,
-            delay=delay, total_duration=total_duration, sample_rate=sample_rate)
+            delay, total_duration=total_duration, sample_rate=sample_rate)
 
         trajectory.polynomial = Trajectory.calc_quartic_polynomial(
             trajectory.state_at_time(delay),
             end_state,
             duration)
+
+        trajectory.max_acceleration = kwargs.get('accel_limit', 1.0)
+        trajectory.max_deceleration = kwargs.get('decel_limit', 5.0)
 
         # Update the end position based on the polynomial:
         trajectory.end_state[0] = trajectory.polynomial(duration - delay)
@@ -176,7 +190,7 @@ class Trajectory:
 
         if np.any(v < 0.0)   \
           or np.any(a >= self.max_acceleration) \
-          or np.any(a <= -2.0 * self.max_acceleration) \
+          or np.any(a <= -self.max_deceleration) \
           or np.any(j >= self.max_jerk) \
           or np.any(j <= -2.0 * self.max_jerk):
             return float('inf')
