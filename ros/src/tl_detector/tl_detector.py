@@ -7,6 +7,7 @@ from styx_msgs.msg import Lane
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from light_classification.tl_classifier import TLClassifier
+from time import time
 import tf
 import cv2
 import yaml
@@ -23,6 +24,7 @@ class TLDetector(object):
         self.waypoints = None
         self.camera_image = None
         self.lights = []
+        self.previous_timestamp = 0.0
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -71,6 +73,12 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
+        current_time = time()
+        if current_time - self.previous_timestamp < 0.2:
+            return
+
+        self.previous_timestamp = current_time
+            
         self.has_image = True
         self.camera_image = msg
         # print("Running image cb")
