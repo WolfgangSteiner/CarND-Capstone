@@ -84,7 +84,6 @@ class WaypointUpdater(object):
         orientation = msg.pose.orientation
         q = [orientation.x, orientation.y, orientation.z, orientation.w]
         _,_,self.yaw = tf.transformations.euler_from_quaternion(q)
-        rospy.logdebug("px = %.2f, py = %.2f, yaw = %.2f", self.px, self.py, self.yaw)
 
 
     def velocity_cb(self, msg):
@@ -231,13 +230,11 @@ class WaypointUpdater(object):
             return False
         
         dist_to_tl = self.distance(current_idx, self.red_tl_waypoint_idx)
-        rospy.loginfo("dist_to_tl : %.2f", dist_to_tl)
 
         if self.velocity < 0.1:
             return dist_to_tl < 1.0
         else:
             time_to_tl = dist_to_tl / self.velocity
-            rospy.loginfo("time_to_tl : %.2f", time_to_tl)
             return time_to_tl < self.breaking_trajectory_duration 
 
 
