@@ -145,11 +145,28 @@ class WaypointUpdater(object):
         return closest_idx
 
 
-    def calc_waypoint_velocity(self, idx):
-        # [wsteiner] WORK IN PROGRESS!!!
-        TEST_PID_CONTROLLER = True
-        if TEST_PID_CONTROLLER or self.red_tl_waypoint_idx == -1:
+    def calc_waypoint_velocity(self, idx, ego_idx):
+        if self.state == STATE.KEEP_VELOCITY:
             return self.target_velocity
+
+        wp_distance = np.abs(self.red_tl_waypoint_idx - ego_idx)
+        
+        if np.abs(self.red_tl_waypoint_idx - ego_idx) !=0:
+            #fitting with x^2, normalized by self.velocity*5
+            # weight = (wp_distance/self.velocity*5)**2
+
+            #fitting with 1/e^x
+            weight = 1/np.exp(wp_distance)
+            # print("weight", weight)
+            # print ("velocity: ", self.velocity)
+            vel = self.velocity*weight
+            # cut off: there might be better way
+            # this is also hyperparameter
+            if vel < 1:
+                vel = 0
+
+            return vel
+
         else:
             return 0.0
 
@@ -199,30 +216,21 @@ class WaypointUpdater(object):
 
 
     def publish_waypoints(self, current_idx):
-        current_idx = self.find_closest_waypoint()
-        self.update_trajectory(current_idx)
-        lane = self.execute_trajectory(current_idx)
-        self.final_waypoints_pub.publish(lane)
+        ego_idx = current_idx
+        self.update_state(current_idx)
 
-
-    def execute_trajectory(self, current_idx):
         lane = Lane()
         num_wp = len(self.waypoints)
-        dist = self.distance(self.trajectory_start_idx, current_idx)
-        last_idx = current_idx
-        #self.distance(self.trajectory_start_idx, current_idx)
-        # Generate final waypoints
+
         for i in range(LOOKAHEAD_WPS):
             wp = self.waypoints[current_idx]
             new_wp = Waypoint()
             new_wp.pose = wp.pose
-            dist += self.distance(last_idx, current_idx)
-            last_idx = current_idx
-            new_wp.twist.twist.linear.x = self.trajectory.velocity_at_position(dist)
+            new_wp.twist.twist.linear.x = self.calc_waypoint_velocity(current_idx, ego_idx)
             lane.waypoints.append(new_wp)
             current_idx = (current_idx + 1) % num_wp
 
-        return lane
+        self.final_waypoints_pub.publish(lane)
 
 
     def is_red_traffic_light_near(self, current_idx):
@@ -252,29 +260,14 @@ class WaypointUpdater(object):
         self.state = STATE.KEEP_VELOCITY
 
 
-    def update_trajectory(self, current_idx):
-        if self.trajectory is None:
-            self.trajectory_start_idx = current_idx - 1
-            s0 = [0.0, 0.0, 0.0]
-            self.switch_to_velocity_keeping(s0)
-    
-        else:
-            trajectory_dist = self.distance(self.trajectory_start_idx, current_idx)
-            _, vel, acc = self.trajectory.state_at_position(trajectory_dist)
-            s0 = [0.0, vel, acc]
-            tl_near = self.is_red_traffic_light_near(current_idx)
+    def update_state(self, current_idx):
+        tl_near = self.is_red_traffic_light_near(current_idx)
 
-            if self.state == STATE.KEEP_VELOCITY and tl_near:
-                s1 = [self.distance_to_next_traffic_light(current_idx), 0.0, 0.0]
-                gen = TrajectoryGenerator.StoppingTrajectoryGenerator(s0, s1)
-                new_trajectory = gen.minimum_cost_trajectory()
+        if self.state == STATE.KEEP_VELOCITY and tl_near:
+            self.state = STATE.STOP_AT_TL
 
-                if new_trajectory is not None:
-                    self.trajectory = new_trajectory
-                    self.state = STATE.STOP_AT_TL
-
-            elif self.state == STATE.STOP_AT_TL and not tl_near:
-                self.switch_to_velocity_keeping(s0)
+        elif self.state == STATE.STOP_AT_TL and not tl_near:
+            self.state = STATE.KEEP_VELOCITY
 
 
     def traffic_cb(self, msg):
