@@ -74,11 +74,11 @@ class TLDetector(object):
 
         """
         current_time = time()
-        if current_time - self.previous_timestamp < 0.2:
+        if current_time - self.previous_timestamp < 0.1:
             return
 
         self.previous_timestamp = current_time
-            
+
         self.has_image = True
         self.camera_image = msg
         # print("Running image cb")
