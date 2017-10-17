@@ -13,6 +13,7 @@ import cv2
 import yaml
 import tfrunner
 import numpy as np
+from std_msgs.msg import Header
 
 STATE_COUNT_THRESHOLD = 3
 
@@ -43,6 +44,8 @@ class TLDetector(object):
         self.config = yaml.load(config_string)
 
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
+        self.image_publisher = rospy.Publisher('/debug_image', Image, queue_size=1)
+
 
         self.bridge = CvBridge()
         self.light_classifier = TLClassifier()
@@ -117,6 +120,15 @@ class TLDetector(object):
         return 0
 
 
+    def publish_camera(self, data):
+        image_message = self.bridge.cv2_to_imgmsg(data,encoding="rgb8")
+        header = Header()
+        header.stamp = rospy.Time.now()
+        image_message.header = header
+       
+        self.image_publisher.publish(image_message)
+        
+
     def get_light_state(self):
         """Determines the current color of the closeset traffic light
 
@@ -130,7 +142,9 @@ class TLDetector(object):
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
-        loc = tfrunner.run(cv_image)
+        loc,augment = tfrunner.run(cv_image)
+        self.publish_camera(augment)
+        
         threshold = 0.99
         r = np.sum(loc[0,0,:,:,1]>threshold)
         g = np.sum(loc[0,0,:,:,2]>threshold)
