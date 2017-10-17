@@ -65,7 +65,7 @@ class DBWNode(object):
 
         self.lpf_accel = LowPassFilter(self.accel_tau, 1.0 / self.sample_rate_in_hertz)
         self.lpf_steer = LowPassFilter(1.0, 1.0)
-        self.lpf_steer.set_filter_constant(0.025)
+        self.lpf_steer.set_filter_constant(0.25)
         self.yaw_controller = YawController(
             self.wheel_base,
             self.steer_ratio,
