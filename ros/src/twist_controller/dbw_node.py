@@ -138,7 +138,7 @@ class DBWNode(object):
         bcmd = BrakeCmd()
         bcmd.enable = True
         bcmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
-        bcmd.pedal_cmd = brake * 3600
+        bcmd.pedal_cmd = brake * 600
         self.brake_pub.publish(bcmd)
 
 
