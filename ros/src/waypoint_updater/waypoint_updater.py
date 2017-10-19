@@ -77,7 +77,7 @@ class WaypointUpdater(object):
         self.current_velocity = 0.0
         self.current_acceleration = 0.0
         self.velocity_keeping_duration = 4.0
-        self.breaking_trajectory_duration = 10.0
+        self.breaking_trajectory_duration = 4.0
 
         r = rospy.Rate(10)
 
