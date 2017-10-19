@@ -52,13 +52,19 @@ class DBWNode(object):
         self.steer_ratio = rospy.get_param('~steer_ratio', 14.8)
         self.max_lat_accel = rospy.get_param('~max_lat_accel', 3.)
         self.max_steer_angle = rospy.get_param('~max_steer_angle', 8.)
+        self.vehicle_mass = rospy.get_param('~vehicle_mass', 1736.35)
+        self.wheel_radius = rospy.get_param('~wheel_radius', 0.2413)
+        self.fuel_capacity = rospy.get_param('~fuel_capacity', 13.5) * 3.785
+        self.fuel_density = 780
+        self.total_vehicle_mass = self.vehicle_mass + self.fuel_capacity * self.fuel_density 
+        
 
         self.controller = Controller(
             sample_rate_in_hertz = self.sample_rate_in_hertz,
-            vehicle_mass = rospy.get_param('~vehicle_mass', 1736.35),
-            fuel_capacity = rospy.get_param('~fuel_capacity', 13.5),
+            vehicle_mass = self.vehicle_mass,
+            fuel_capacity = self.fuel_capacity,
             brake_deadband = rospy.get_param('~brake_deadband', .1),
-            wheel_radius = rospy.get_param('~wheel_radius', 0.2413),
+            wheel_radius = self.wheel_radius,
             decel_limit = rospy.get_param('~decel_limit', -5),
             accel_limit = rospy.get_param('~accel_limit', 1.),
             max_steer_angle = self.max_steer_angle)
@@ -138,7 +144,7 @@ class DBWNode(object):
         bcmd = BrakeCmd()
         bcmd.enable = True
         bcmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
-        bcmd.pedal_cmd = brake * 600
+        bcmd.pedal_cmd = brake * self.total_vehicle_mass * self.wheel_radius
         self.brake_pub.publish(bcmd)
 
 
