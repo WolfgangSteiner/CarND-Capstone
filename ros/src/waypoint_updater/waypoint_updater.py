@@ -31,7 +31,22 @@ class STATE:
     KEEP_VELOCITY = 0
     STOP_AT_TL = 1
 
-    
+
+class BreakingTrajectory(object):
+    def __init__(self, start_velocity, distance_to_tl, alpha=1.25):
+        self.alpha = alpha
+        self.acceleration = -0.5 * start_velocity**2/max(0.1, distance_to_tl) * self.alpha
+        self.start_velocity = start_velocity
+        self.distance_to_tl = distance_to_tl
+
+
+    def velocity_at_position(self, x):
+        if x >= self.distance_to_tl:
+            return 0.0
+
+        return math.sqrt(max(0.0, x * self.acceleration + self.start_velocity**2))
+
+
 class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater', log_level=rospy.INFO)
@@ -57,6 +72,7 @@ class WaypointUpdater(object):
         self.state = STATE.KEEP_VELOCITY
         self.red_tl_waypoint_idx = -1
         self.trajectory_start_idx = -1
+        self.trajectory_start_velocity = 0.0
         self.trajectory = None
         self.current_velocity = 0.0
         self.current_acceleration = 0.0
@@ -146,19 +162,12 @@ class WaypointUpdater(object):
 
 
     def calc_waypoint_velocity(self, idx):
-        if(self.red_tl_waypoint_idx==-1):
+        if self.state == STATE.KEEP_VELOCITY:
             return self.target_velocity
-        wp_distance = self.red_tl_waypoint_idx - idx - 2
-        if(wp_distance<-2):
-            wp_distance=0
 
-        speed_correction = wp_distance/50.
-        print(self.red_tl_waypoint_idx,  idx)
-        print(speed_correction)
-        
-        if(speed_correction>1):
-            speed_correction=1
-        return self.target_velocity*speed_correction
+        dist = self.distance(self.trajectory_start_idx, idx)
+        return self.trajectory.velocity_at_position(dist)
+
 
 
     def waypoints_cb(self, waypoints_msg):
@@ -256,9 +265,15 @@ class WaypointUpdater(object):
 
         if self.state == STATE.KEEP_VELOCITY and tl_near:
             self.state = STATE.STOP_AT_TL
+            self.trajectory_start_idx = current_idx
+            self.trajectory = BreakingTrajectory(
+                self.current_velocity,
+                self.distance_to_next_traffic_light(current_idx))
+
 
         elif self.state == STATE.STOP_AT_TL and not tl_near:
             self.state = STATE.KEEP_VELOCITY
+            self.trajectory = None
 
 
     def traffic_cb(self, msg):
