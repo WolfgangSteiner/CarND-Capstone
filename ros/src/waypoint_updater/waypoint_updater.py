@@ -165,6 +165,9 @@ class WaypointUpdater(object):
         if self.state == STATE.KEEP_VELOCITY:
             return self.target_velocity
 
+        elif idx >= self.red_tl_waypoint_idx:
+            return 0.0
+
         dist = self.distance(self.trajectory_start_idx, idx)
         return self.trajectory.velocity_at_position(dist)
 
