@@ -12,8 +12,7 @@ class Controller(object):
         self.decel_limit = kwargs["decel_limit"]
         self.accel_limit = kwargs["accel_limit"]
         self.max_steer_angle = kwargs["max_steer_angle"]
-        self.linear_velocity_pid = PID(1.0, 0.1, 0.5, mn=-fabs(self.decel_limit), mx=self.accel_limit)
-        self.speed_pid = PID(1.0, 0.0, 0.04,  mn=-fabs(self.decel_limit), mx=self.accel_limit)
+        self.speed_pid = PID(0.4, 0.0, 0.04,  mn=-0.4, mx=0.8)
         self.steering_pid_parameters = kwargs.get("steering_pid_parameters", [0.1, 0.01, 32.0])
         steer_p, steer_i, steer_d = self.steering_pid_parameters
         max_steer = 1.0
@@ -50,5 +49,5 @@ class Controller(object):
 
 
     def reset(self):
-        self.linear_velocity_pid.reset()
+        self.speed_pid.reset()
         self.steering_pid.reset()
