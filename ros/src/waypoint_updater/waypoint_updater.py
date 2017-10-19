@@ -239,6 +239,9 @@ class WaypointUpdater(object):
         
         dist_to_tl = self.distance(current_idx, self.red_tl_waypoint_idx)
 
+        if current_idx > self.red_tl_waypoint_idx:
+            return dist_to_tl < 2.0
+
         if self.velocity < 0.1:
             return dist_to_tl < 1.0
         else:
