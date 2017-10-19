@@ -6,7 +6,6 @@ import glob
 import atexit
 
 
-print(glob.glob("./*"))
 gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.7) # this helps to avoid memory error
 sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))   
 
@@ -61,53 +60,6 @@ def run(testdata):
     augment(testdata,img[0,0,:,:,3]>threshold,(255,255,0), img)
 
 
-
-    xx, yy = np.meshgrid(np.arange(img.shape[3]),np.arange(img.shape[2]))
-
-
-    x = (xx[img[0,0,:,:,1]>threshold])
-    y = (yy[img[0,0,:,:,1]>threshold])
-    cluster(np.array([x,y]).T)
-
-
-    #luster(img[0,0,:,:,2]>threshold)
-    #cluster(img[0,0,:,:,3]>threshold)
-
-
-    
-    # no more need as image is published to debug_image
-    #testdata = cv2.cvtColor(testdata, cv2.COLOR_BGR2RGB)
-    #cv2.imshow('image',testdata)
-    #cv2.waitKey(1)
+   
 
     return (img,testdata)
-
-
-#testdata = (cv2.cvtColor(cv2.imread("../../testimages/00200.jpg"), cv2.COLOR_BGR2RGB))
-#run(testdata)
-
-
-def cluster(X, debug=False):
-    #this is more or less a direct copy of the DBSCAN sample code from sklear with some ajustment to the params
-    from sklearn.cluster import DBSCAN
-    print(X.shape)
-    
-    if len(X)==0:
-        return np.array([])
-    db = DBSCAN(eps=8, min_samples=5).fit(X)
-    labels = db.labels_
-    # Number of clusters in labels, ignoring noise if present.
-    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-
-    print(n_clusters_)
-
-      
-
-    l = []
-    for i in range(n_clusters_):
-        print(X[labels==i].mean(axis=0))
-        l.append([X[labels==i].mean(axis=0), X[labels==i].std(axis=0)])
-        
-
-    print(l)
-    return np.array(l)
