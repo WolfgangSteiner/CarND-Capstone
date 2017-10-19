@@ -56,8 +56,8 @@ class DBWNode(object):
         self.wheel_radius = rospy.get_param('~wheel_radius', 0.2413)
         self.fuel_capacity = rospy.get_param('~fuel_capacity', 13.5) * 3.785
         self.fuel_density = 780
-        self.total_vehicle_mass = self.vehicle_mass + self.fuel_capacity * self.fuel_density 
-        
+        self.total_vehicle_mass = self.vehicle_mass + self.fuel_capacity * self.fuel_density
+
 
         self.controller = Controller(
             sample_rate_in_hertz = self.sample_rate_in_hertz,
@@ -69,9 +69,10 @@ class DBWNode(object):
             accel_limit = rospy.get_param('~accel_limit', 1.),
             max_steer_angle = self.max_steer_angle)
 
-        self.lpf_accel = LowPassFilter(self.accel_tau, 1.0 / self.sample_rate_in_hertz)
-        self.lpf_steer = LowPassFilter(1.0, 1.0)
-        self.lpf_steer.set_filter_constant(0.25)
+        self.lpf_steer = LowPassFilter(0.05)
+        self.lpf_brake = LowPassFilter(0.05)
+        self.lpf_throttle = LowPassFilter(0.1)
+
         self.yaw_controller = YawController(
             self.wheel_base,
             self.steer_ratio,
@@ -124,6 +125,11 @@ class DBWNode(object):
                 self.current_linear_velocity)
 
             steer = self.lpf_steer.filter(steer_a + steer_b)
+            throttle = self.lpf_throttle.filter(throttle)
+            brake = self.lpf_brake.filter(brake)
+            if brake < 0.01:
+                brake = 0.0
+
             self.publish(throttle, brake, steer)
 
             rate.sleep()
@@ -144,7 +150,7 @@ class DBWNode(object):
         bcmd = BrakeCmd()
         bcmd.enable = True
         bcmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
-        bcmd.pedal_cmd = brake * self.total_vehicle_mass * self.wheel_radius
+        bcmd.pedal_cmd = brake * 400
         self.brake_pub.publish(bcmd)
 
 
@@ -154,10 +160,6 @@ class DBWNode(object):
 
 
     def velocity_cb(self, msg):
-        if self.current_linear_velocity is not None:
-            raw_accel = self.sample_rate_in_hertz * (self.current_linear_velocity - msg.twist.linear.x)
-            self.current_acceleration = self.lpf_accel.filter(raw_accel)
-
         self.current_linear_velocity = msg.twist.linear.x
         self.current_angular_velocity = msg.twist.angular.z
 
