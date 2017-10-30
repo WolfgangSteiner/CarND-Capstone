@@ -68,7 +68,8 @@ class WaypointUpdater(object):
         self.velocity = None
         self.waypoints = None
         self.current_waypoint_idx = None
-        self.target_velocity = rospy.get_param('~velocity', 40.0) / 3.6
+        self.target_velocity = rospy.get_param('/waypoint_loader/velocity', 10.0) / 3.6
+
         self.state = STATE.KEEP_VELOCITY
         self.red_tl_waypoint_idx = -1
         self.trajectory_start_idx = -1
