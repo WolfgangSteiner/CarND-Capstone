@@ -164,6 +164,8 @@ class WaypointUpdater(object):
 
     def calc_waypoint_velocity(self, idx):
         if self.state == STATE.KEEP_VELOCITY:
+            smooth = self.velocity / self.target_velocity + 0.1
+            smooth = np.clip(smooth, 0,1)
             return self.target_velocity
 
         elif idx >= self.red_tl_waypoint_idx:

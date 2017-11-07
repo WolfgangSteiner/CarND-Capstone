@@ -44,7 +44,7 @@ class TLDetector(object):
         self.config = yaml.load(config_string)
 
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
-        self.image_publisher = rospy.Publisher('/debug_image', Image, queue_size=1)
+        self.image_publisher = rospy.Publisher('/debug_image2', Image, queue_size=1)
 
 
         self.bridge = CvBridge()

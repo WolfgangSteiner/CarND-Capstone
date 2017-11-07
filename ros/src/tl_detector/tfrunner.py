@@ -47,7 +47,7 @@ def run(testdata):
     img = sess.run([sm], feed_dict={tf_data: testdata.reshape([1,300, 400, 3]), tf_train: False})
 
         
-    threshold = 0.999
+    threshold = 0.9999
         
     img = np.array(img)
     #print("Nothing:",np.sum(img[0,0,:,:,0]>threshold))
