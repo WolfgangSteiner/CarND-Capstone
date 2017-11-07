@@ -162,11 +162,11 @@ class WaypointUpdater(object):
         return closest_idx
 
 
-    def calc_waypoint_velocity(self, idx):
+    def calc_waypoint_velocity(self, idx, i):
         if self.state == STATE.KEEP_VELOCITY:
-            smooth = self.velocity / self.target_velocity + 0.1
+            smooth = self.velocity / self.target_velocity + 0.3*(i+1)
             smooth = np.clip(smooth, 0,1)
-            return self.target_velocity
+            return self.target_velocity*smooth
 
         elif idx >= self.red_tl_waypoint_idx:
             return 0.0
@@ -231,7 +231,7 @@ class WaypointUpdater(object):
             wp = self.waypoints[current_idx]
             new_wp = Waypoint()
             new_wp.pose = wp.pose
-            new_wp.twist.twist.linear.x = self.calc_waypoint_velocity(current_idx)
+            new_wp.twist.twist.linear.x = self.calc_waypoint_velocity(current_idx, i)
             lane.waypoints.append(new_wp)
             #print(lane.waypoints)
             current_idx = (current_idx + 1) % num_wp
